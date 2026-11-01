@@ -1,0 +1,3316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="APUSH Hexagon Study Tool: arrange, connect, and discuss history terms with your study partners.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>APUSH Hexagon Study Tool</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: a full-screen slate "game table" with a hex grid; a slim toolbar on top and a term tray down the left (a strip on phones). */
+:root{
+  --table:#d6e0e2; --grid:rgba(34,70,82,.14); --panel:#f5f8f8; --panel-2:#e9eff0;
+  --ink:#16262c; --muted:#53666c; --line:#c1cdd0; --accent:#1d6c75; --accent-ink:#ffffff;
+  --tile:#fbfcfb; --tile-edge:#2b3c41; --shadow:rgba(20,40,48,.28); --scrim:rgba(14,26,30,.35);
+  --c-red:#f2c2bb; --c-orange:#f6d2a6; --c-yellow:#f1e298; --c-green:#c4e2b6; --c-blue:#bad6f0; --c-purple:#d8c6ee;
+  --font-display:"EB Garamond", Garamond, "Times New Roman", Georgia, serif;
+  --font-ui:"EB Garamond", Garamond, "Times New Roman", Georgia, serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --table:#121b1f; --grid:rgba(150,196,208,.085); --panel:#1a252a; --panel-2:#212e34;
+  --ink:#e2ebed; --muted:#93a7ad; --line:#2f3f45; --accent:#5ec0ca; --accent-ink:#0d1a1d;
+  --tile:#25333a; --tile-edge:#9ab0b6; --shadow:rgba(0,0,0,.55); --scrim:rgba(0,0,0,.5);
+  --c-red:#5c2c29; --c-orange:#5d3e1f; --c-yellow:#544a1d; --c-green:#2d4b2b; --c-blue:#24415e; --c-purple:#40305a;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --table:#121b1f; --grid:rgba(150,196,208,.085); --panel:#1a252a; --panel-2:#212e34;
+  --ink:#e2ebed; --muted:#93a7ad; --line:#2f3f45; --accent:#5ec0ca; --accent-ink:#0d1a1d;
+  --tile:#25333a; --tile-edge:#9ab0b6; --shadow:rgba(0,0,0,.55); --scrim:rgba(0,0,0,.5);
+  --c-red:#5c2c29; --c-orange:#5d3e1f; --c-yellow:#544a1d; --c-green:#2d4b2b; --c-blue:#24415e; --c-purple:#40305a;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+input,textarea,select{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--table);color:var(--ink);font-family:var(--font-ui);font-size:16.5px;overflow:hidden;display:flex;flex-direction:column}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Toolbar */
+.bar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));position:relative;z-index:20}
+.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.brand h1{font-family:var(--font-display);font-weight:700;font-size:1.2rem;margin:0;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
+.brand h1 svg{flex:none}
+.brand small{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl{display:flex;align-items:center;gap:8px}
+.ctl label{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+select{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:240px}
+.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.icon{padding:6px 9px;min-width:34px;justify-content:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg .btn{border:0;border-radius:0}
+.seg .btn+.btn{border-left:1px solid var(--line)}
+.switch{display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:4px 0}
+.switch .track{width:36px;height:20px;border-radius:20px;background:var(--line);position:relative;transition:background .15s}
+.switch .track::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--panel);transition:transform .15s}
+.switch[aria-checked="true"] .track{background:var(--accent)}
+.switch[aria-checked="true"] .track::after{transform:translateX(16px)}
+.switch span:last-child{font-size:.9rem}
+
+/* Main */
+.main{flex:1;display:flex;min-height:0;position:relative}
+.tray{width:236px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;z-index:10}
+.tray-head{padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.tray-head h2{margin:0;font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700;display:flex;justify-content:space-between}
+.tray-head h2 b{font-variant-numeric:tabular-nums;color:var(--ink)}
+.tray-head select{max-width:none;width:100%}
+.chip.placed{opacity:.45;cursor:default;font-weight:500}
+.tray-list{overflow:auto;padding:10px 12px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--tile);
+  font-family:var(--font-display);font-weight:600;font-size:.92rem;line-height:1.2;cursor:grab;user-select:none;touch-action:none;text-align:left}
+.chip svg{flex:none;color:var(--muted)}
+.chip:hover{border-color:var(--accent)}
+.tray-empty{color:var(--muted);font-size:.88rem;line-height:1.45;padding:6px 2px}
+.tray-foot{padding:10px 12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.tray-foot .btn{justify-content:center}
+
+.viewport{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;min-width:0}
+.viewport.panning{cursor:grabbing}
+.world{position:absolute;left:0;top:0;width:5000px;height:3600px;transform-origin:0 0}
+.tiles,.badges{position:absolute;inset:0}
+.badges{pointer-events:none}
+.badge{pointer-events:auto}
+
+/* Hex tile (flat-top) */
+.hex{position:absolute;width:var(--w);height:var(--h);perspective:700px;touch-action:none;user-select:none;-webkit-user-select:none;
+  filter:drop-shadow(0 2px 2px var(--shadow));transition:filter .12s, left .14s ease-out, top .14s ease-out;outline:none}
+.hex.dragging{transition:filter .12s;filter:drop-shadow(0 12px 14px var(--shadow));z-index:5}
+.hex.pairing{filter:drop-shadow(0 0 0 var(--accent)) drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 10px var(--accent));z-index:4}
+.rel .qcount{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.85rem;color:var(--accent);font-weight:700;margin:-2px 0 6px}
+.rel .qcount .link{font-weight:400}
+.rel{position:fixed}
+.rel .xclose{position:absolute;top:6px;right:8px;background:none;border:0;font-size:1.4rem;line-height:1;color:var(--muted);padding:2px 6px;border-radius:6px}
+.rel .xclose:hover{color:var(--ink);background:var(--panel-2)}
+.rel .steps{padding-right:28px}
+.hex:focus-visible .face{outline:none}
+.hex:focus-visible{filter:drop-shadow(0 0 0 var(--accent)) drop-shadow(0 0 3px var(--accent))}
+.flip{position:absolute;inset:2px;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,.7,.2,1)}
+.hex.flipped .flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:var(--tile-edge)}
+.face::before{content:"";position:absolute;inset:2px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:var(--fill,var(--tile))}
+.face .txt{position:absolute;inset:12% 17%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.front .txt{font-family:var(--font-display);font-weight:600;line-height:1.12;overflow-wrap:normal;hyphens:manual}
+.back{transform:rotateY(180deg)}
+.back .txt{inset:9% 15%;gap:3px}
+.back .date{font-family:var(--font-ui);font-weight:700;color:var(--accent);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;line-height:1.15}
+.back .def{font-size:10px;line-height:1.22}
+.hex[data-color="red"]{--fill:var(--c-red)} .hex[data-color="orange"]{--fill:var(--c-orange)} .hex[data-color="yellow"]{--fill:var(--c-yellow)}
+.hex[data-color="green"]{--fill:var(--c-green)} .hex[data-color="blue"]{--fill:var(--c-blue)} .hex[data-color="purple"]{--fill:var(--c-purple)}
+
+/* Edge badges */
+.badge{position:absolute;transform:translate(-50%,-50%);z-index:4;border:0;border-radius:999px;padding:2px 7px;font-size:12px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;color:#fff;background:var(--bc,#555);display:inline-flex;align-items:center;gap:3px;
+  box-shadow:0 1px 3px var(--shadow);line-height:1.4;white-space:nowrap;font-family:var(--font-ui)}
+.badge.unset{background:var(--panel);color:var(--accent);border:1.5px dashed var(--accent);padding:0;width:22px;height:22px;justify-content:center;font-size:15px;line-height:1}
+.badge:hover{filter:brightness(1.1)}
+.badge svg{display:block}
+
+/* Popovers & dialogs */
+.pop{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px var(--shadow);padding:12px;max-width:min(340px,calc(100vw - 24px))}
+.ctx{padding:8px;min-width:200px}
+.ctx .sw{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:4px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.sw button{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);padding:0;position:relative}
+.sw button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--panel) inset}
+.sw .none{background:var(--tile);}
+.sw .none::after{content:"";position:absolute;left:3px;right:3px;top:50%;height:2px;background:var(--muted);transform:rotate(-45deg)}
+.ctx .item{display:flex;width:100%;text-align:left;background:none;border:0;padding:7px 8px;border-radius:7px;font-size:.92rem}
+.ctx .item:hover{background:var(--panel-2)}
+.rel h3{margin:0 0 2px;font-size:.75rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.rel .pair{font-family:var(--font-display);font-weight:600;font-size:1rem;margin:2px 0 10px;line-height:1.3;text-wrap:balance}
+.rel .pair span{color:var(--muted);font-family:var(--font-ui);font-weight:400}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cat{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);text-align:left;font-size:.9rem}
+.cat i{width:10px;height:10px;border-radius:3px;background:var(--bc);flex:none}
+.cat:hover,.cat[aria-pressed="true"]{border-color:var(--bc)}
+.cat[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--bc)}
+.rel .row{display:flex;gap:8px;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
+.rel .link{background:none;border:0;color:var(--muted);text-decoration:underline;padding:6px 2px;font-size:.88rem}
+.rel{width:min(360px,calc(100vw - 24px))}
+.rel .steps{display:flex;align-items:center;gap:6px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.rel .steps b,.rel .steps span{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:.72rem;border:1px solid var(--line)}
+.rel .steps b{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.rel .grp{font-size:.74rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:8px 0 4px}
+.rel .cats.one{grid-template-columns:1fr}
+.rel .cats .cat{justify-content:center;text-align:center;--bc:var(--accent)}
+.rel .cats.themes .cat{justify-content:flex-start;text-align:left;font-size:.86rem;line-height:1.2}
+.rel h3 small{text-transform:none;letter-spacing:0;font-weight:400}
+.rel textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--tile);margin-top:4px;resize:vertical;font:inherit;line-height:1.4}
+.rel .row .gap{flex:1}
+.rel input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--tile);margin-top:8px}
+.dir{display:flex;flex-direction:column;gap:6px}
+.dir .cat{grid-column:auto}
+
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.dialog{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px var(--shadow);width:min(560px,100%);max-height:calc(100% - 20px);overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.dialog h2{margin:0;font-family:var(--font-display);font-size:1.25rem;text-wrap:balance}
+.dialog p{margin:0;color:var(--muted);line-height:1.45;max-width:62ch}
+.dialog textarea,.dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--tile);padding:9px 10px;line-height:1.4}
+.dialog textarea{min-height:170px;resize:vertical;font-family:var(--font-ui);font-size:15px}
+.dialog .actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.dialog .note{font-size:.85rem}
+.dialog.card-view{width:min(520px,100%);gap:10px;border-top:6px solid var(--card-accent,var(--accent))}
+.card-view .eyebrow{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.card-view h2{font-size:clamp(1.6rem,4.5vw,2.1rem);line-height:1.1}
+.card-view .cdate{font-weight:700;color:var(--accent);font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase}
+.card-view .cdef{margin:0;font-size:clamp(1.15rem,2.6vw,1.3rem);line-height:1.5;color:var(--ink);max-width:none}
+.card-view h3{margin:6px 0 0;font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.conn-list{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.conn-list li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);font-family:var(--font-display);font-weight:600;font-size:.95rem}
+.conn-list .badge{position:static;transform:none}
+.conn-list em{font-family:var(--font-ui);font-weight:400;font-style:normal;color:var(--muted);font-size:.85rem;flex-basis:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.legend .badge{position:static;transform:none}
+
+.help{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:8;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.82rem;color:var(--muted);line-height:1.5;max-width:300px;box-shadow:0 4px 14px var(--shadow)}
+.help b{color:var(--ink)}
+.help button{float:right;background:none;border:0;color:var(--muted);padding:0 0 0 8px;font-size:1rem;line-height:1}
+.zoom{position:absolute;left:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:8;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 4px 14px var(--shadow)}
+.zoom button{background:none;border:0;width:38px;height:36px;font-size:1.1rem;display:flex;align-items:center;justify-content:center}
+.zoom button+button{border-top:1px solid var(--line)}
+.toast{pointer-events:none;position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 14px;border-radius:9px;font-size:.9rem;z-index:80;max-width:calc(100vw - 32px)}
+.ghost{position:fixed;z-index:70;pointer-events:none;opacity:.92}
+
+
+/* Timeline view */
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.main.tl .tray, .main.tl .viewport{display:none}
+.timeline{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--table)}
+.tl-bar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.tl-note{margin:0 auto 0 0;color:var(--muted);font-size:.95rem;min-width:0}
+.tl-scroll{flex:1;overflow:auto;position:relative}
+.tl-canvas{position:relative}
+.tl-axis{position:sticky;top:0;z-index:6;height:34px;background:color-mix(in srgb,var(--table) 88%,transparent);border-bottom:1px solid var(--line);backdrop-filter:blur(3px)}
+.tl-tick{position:absolute;bottom:0;transform:translateX(-50%);font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;padding-bottom:6px;white-space:nowrap}
+.tl-tick::after{content:"";position:absolute;left:50%;bottom:-1px;width:1px;height:6px;background:var(--muted)}
+.tl-grid{position:absolute;top:34px;bottom:0;width:1px;background:var(--grid)}
+.tl-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.tlh{position:absolute;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:var(--tile-edge);border:0;padding:0;cursor:pointer;filter:none}
+.tlh .in{position:absolute;inset:2px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:var(--fill,var(--tile));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 16%;text-align:center}
+.tlh .tt{font-family:var(--font-display);font-weight:600;line-height:1.08;overflow-wrap:normal;color:var(--ink);max-width:100%}
+.tlh .td{font-size:9.5px;font-weight:700;color:var(--accent);letter-spacing:.04em;line-height:1.1}
+.tlh:hover .in,.tlh:focus-visible .in{background:color-mix(in srgb,var(--fill,var(--tile)) 82%,var(--accent))}
+.tlh:focus-visible{outline:none}
+.tlh[data-color="red"],.tlh [data-color="red"]{--fill:var(--c-red)} .tlh[data-color="orange"]{--fill:var(--c-orange)} .tlh[data-color="yellow"]{--fill:var(--c-yellow)}
+.tlh[data-color="green"]{--fill:var(--c-green)} .tlh[data-color="blue"]{--fill:var(--c-blue)} .tlh[data-color="purple"]{--fill:var(--c-purple)}
+.tl-empty{padding:40px max(16px,env(safe-area-inset-left,0px));color:var(--muted);font-size:1.05rem;max-width:60ch}
+.tl-undated{position:absolute;left:16px;right:16px;color:var(--muted);font-size:.95rem}
+
+/* Mental Word Bank */
+.main.wb .tray, .main.wb .viewport{display:none}
+.wordbank{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--table)}
+.wordbank .tl-bar select{max-width:min(320px,100%)}
+.wb-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(220px,270px) minmax(0,1fr) minmax(260px,330px)}
+.wb-col{background:var(--panel);overflow:auto;padding:14px 14px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.wb-qs{border-right:1px solid var(--line)} .wb-build{border-left:1px solid var(--line)}
+.wb-h{margin:4px 0 0;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.wb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.wb-list li{display:flex;gap:4px;align-items:stretch}
+.wb-q{flex:1;text-align:left;background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.95rem;line-height:1.3;display:flex;flex-direction:column;gap:4px;min-width:0}
+.wb-q:hover{border-color:var(--accent)}
+.wb-q[aria-current="true"]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent);background:var(--panel-2)}
+.wb-q small{color:var(--muted);font-size:.78rem;font-variant-numeric:tabular-nums}
+.wb-q .clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.wb-del{background:none;border:0;color:var(--muted);font-size:1.2rem;padding:0 4px}
+.wb-addq{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.wb-addq textarea,.wb-build input[type=search],.wb-ev input{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--tile);padding:7px 9px;font:inherit;font-size:.95rem}
+.wb-addq .btn{align-self:flex-start}
+.wb-stage{position:relative;overflow:auto;min-width:0}
+.wb-canvas{position:relative;margin:0 auto;transform-origin:50% 0}
+.wb-empty{padding:40px 20px;color:var(--muted);font-size:1.05rem;max-width:44ch;margin:0 auto;text-align:center}
+.wbq{position:absolute;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:var(--tile-edge)}
+.wbq .in{position:absolute;inset:3px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:var(--c-yellow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 19%;text-align:center}
+.wbq .lab{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.wbq .qt{font-family:var(--font-display);font-weight:600;line-height:1.15;color:var(--ink)}
+.wb-build .qhead{font-family:var(--font-display);font-size:1.1rem;line-height:1.35;margin:0}
+.wb-ev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.wb-ev li{border:1px solid var(--line);border-radius:10px;background:var(--tile);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.wb-ev .top{display:flex;align-items:baseline;gap:8px}
+.wb-ev .top b{font-family:var(--font-display);font-size:1rem;flex:1;min-width:0}
+.wb-ev .top span{color:var(--accent);font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wb-ev .x{background:none;border:0;color:var(--muted);font-size:1.15rem;line-height:1;padding:0 2px}
+.wb-ev input{font-size:.92rem;padding:5px 8px}
+.wb-terms{display:flex;flex-wrap:wrap;gap:6px}
+.wb-chip{border:1px solid var(--line);border-radius:999px;background:var(--tile);padding:4px 11px;font-size:.92rem;line-height:1.3;text-align:left}
+.wb-chip:hover{border-color:var(--accent)}
+.wb-chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.wb-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:1000px){
+  .wordbank{overflow:auto}
+  .wb-body{display:flex;flex-direction:column;flex:none}
+  .wb-qs,.wb-build{border:0;border-top:1px solid var(--line);overflow:visible}
+  .wb-qs{order:2} .wb-stage{order:1;min-height:420px;overflow:hidden} .wb-build{order:3}
+  .wb-list{max-height:260px;overflow:auto}
+}
+
+/* Opening page */
+.brand .home{background:none;border:0;padding:0;font:inherit;display:inline-flex;align-items:center;gap:8px;color:inherit;text-align:left}
+.brand .home:hover{color:var(--accent)}
+.intro{position:fixed;inset:0;z-index:90;background:var(--table);overflow:auto;
+  padding-top:calc(clamp(28px,7vh,72px) + env(safe-area-inset-top,0px));padding-bottom:calc(40px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.intro-inner{max-width:880px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.intro-mark{width:min(220px,52vw);height:auto;display:block}
+.intro-mark .h{stroke:var(--tile-edge);stroke-width:2.2}
+.intro h1{font-family:var(--font-display);font-weight:700;margin:0;font-size:clamp(1.9rem,5.4vw,3.4rem);line-height:1.05;letter-spacing:.06em;text-wrap:balance;color:var(--ink)}
+.intro .lede{margin:0;max-width:62ch;font-size:clamp(1.02rem,1.9vw,1.18rem);line-height:1.6;color:var(--ink);text-wrap:pretty}
+.intro .lede em{font-style:normal;font-weight:700;color:var(--accent)}
+.intro h2{margin:12px 0 0;font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.guides{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;width:100%}
+.guide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);transition:border-color .15s, transform .15s}
+.guide:hover{border-color:var(--accent);transform:translateY(-2px)}
+.guide b{font-family:var(--font-display);font-size:1.12rem;line-height:1.25}
+.guide span{color:var(--muted);font-size:.88rem;font-variant-numeric:tabular-nums}
+.guide.resume{border-color:var(--accent)}
+.guide.resume::before{content:"Continue where you left off";font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700}
+.howto{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px;width:100%;text-align:left}
+.howto li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.9rem;line-height:1.45;color:var(--muted)}
+.howto b{display:block;color:var(--ink);font-size:.95rem;margin-bottom:2px}
+@media (prefers-reduced-motion:reduce){.guide{transition:none}}
+
+@media (max-width:760px){
+  .bar{gap:8px 10px}
+  .brand small{display:none}
+  .main{flex-direction:column}
+  .tray{width:auto;border-right:0;border-bottom:1px solid var(--line);max-height:none}
+  .tray-head{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:0}
+  .tray-head select{width:auto;flex:1;min-width:0}
+  .tray-list{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:0 12px 10px;flex:none}
+  .chip{flex:none;max-width:200px}
+  .tray-foot{display:none}
+  .help{left:66px;right:max(14px,env(safe-area-inset-right,0px));max-width:none}
+  .hide-sm{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){.flip,.hex{transition:none!important}}
+</style>
+</head>
+<body>
+
+<section class="intro" id="intro" aria-labelledby="introTitle">
+  <div class="intro-inner">
+    <svg class="intro-mark" viewBox="-4 -4 228 158" aria-hidden="true">
+      <g transform="translate(110 75)">
+        <path class="h" d="M-22-38h44l22 38-22 38h-44l-22-38z" fill="var(--tile)"/>
+        <path class="h" d="M44-76h44l22 38-22 38H44L22-38z" transform="translate(-0 0)" fill="var(--c-blue)"/>
+        <path class="h" d="M44 0h44l22 38-22 38H44L22 38z" fill="var(--c-yellow)"/>
+        <path class="h" d="M-88-76h44l22 38-22 38h-44l-22-38z" fill="var(--c-green)"/>
+        <path class="h" d="M-88 0h44l22 38-22 38h-44l-22-38z" fill="var(--c-red)"/>
+        <circle cx="33" cy="-19" r="7" fill="#bf3b2e"/><circle cx="-33" cy="19" r="7" fill="#2f6fb0"/><circle cx="-33" cy="-19" r="7" fill="#1f7a5a"/>
+      </g>
+    </svg>
+    <h1 id="introTitle">APUSH HEXAGON STUDY TOOL</h1>
+    <p class="lede">This tool is meant to generate conversations between yourself and your study partners. As you connect Hexagons and make connections, discuss with your study partners <em>WHY</em> you chose these connections. The more connections you can make, and the more conversations you can generate, the better prepared you will be to understand cause and effect, context, comparisons, and the other skills that AP tests require.</p>
+    <h2>Choose a study guide to begin</h2>
+    <div class="guides" id="guideList"></div>
+    <h2>How it works</h2>
+    <ol class="howto">
+      <li><b>Drag</b>Pull terms from the tray onto the table.</li>
+      <li><b>Flip</b>Double-click a hexagon to see its date and definition. Click a flipped hexagon to read it on a large card.</li>
+      <li><b>Color</b>Click a hexagon to color-code it.</li>
+      <li><b>Connect</b>Push two sides together, then pick how they connect, in what area, and (if you like) why.</li>
+      <li><b>Timeline</b>Switch to Timeline to see your terms laid out by date, with your connections drawn as arcs.</li>
+      <li><b>Mental Word Bank</b>Pick one of the study guide's questions and surround it with the terms that help answer it.</li>
+    </ol>
+  </div>
+</section>
+
+<header class="bar">
+  <div class="brand">
+    <h1><button class="home" id="homeBtn" title="Back to the start page"><svg width="22" height="20" viewBox="0 0 44 38" aria-hidden="true"><path d="M11 1h22l11 18-11 18H11L0 19z" fill="none" stroke="currentColor" stroke-width="3.5"/><path d="M15 10h14l7 9-7 9H15l-7-9z" fill="var(--accent)"/></svg>APUSH Hexagon Study Tool</button></h1>
+    <small id="setNote">Arrange terms, connect them, explain why.</small>
+  </div>
+  <div class="ctl">
+    <label for="setSel">Study guide</label>
+    <select id="setSel" aria-label="Study guide"></select>
+  </div>
+  <div class="seg" role="group" aria-label="View">
+    <button class="btn" id="viewTable" aria-pressed="true">Table</button>
+    <button class="btn" id="viewTimeline" aria-pressed="false">Timeline</button>
+    <button class="btn" id="viewBank" aria-pressed="false">Mental Word Bank</button>
+  </div>
+  <button class="switch" id="defToggle" role="switch" aria-checked="true"><span class="track"></span><span>Definitions</span></button>
+  <button class="btn" id="connBtn"><svg width="16" height="14" viewBox="0 0 44 38" aria-hidden="true"><path d="M2 19 9 7h12l6 12-6 12H9z M23 19l6-12h12l3 6" fill="none" stroke="currentColor" stroke-width="3.5"/></svg>Connections <b id="connCount">0</b></button>
+  <button class="btn hide-sm" id="importBtn">Load my own terms</button>
+  <button class="btn" id="undoBtn" disabled title="Undo (Ctrl+Z or ⌘Z)"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 2 7l4 4M2.5 7H10a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Undo</button>
+  <button class="btn" id="resetBtn">Clear table</button>
+</header>
+
+<div class="main">
+  <aside class="tray" aria-label="Term tray">
+    <div class="tray-head">
+      <h2>Term tray <b id="trayCount">0</b></h2>
+      <select id="secSel" aria-label="Section"></select>
+      <button class="btn primary" id="dealBtn">Deal these onto table</button>
+    </div>
+    <div class="tray-list" id="trayList"></div>
+    <div class="tray-foot">
+      <button class="btn" id="importBtn2">Load my own terms</button>
+    </div>
+  </aside>
+  <section class="viewport" id="viewport" aria-label="Table top">
+    <div class="world" id="world">
+      <div class="tiles" id="tiles"></div>
+      <div class="badges" id="badges"></div>
+    </div>
+    <div class="zoom" aria-label="Zoom">
+      <button id="zIn" aria-label="Zoom in">+</button>
+      <button id="zOut" aria-label="Zoom out">−</button>
+      <button id="zFit" aria-label="Fit all tiles"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    </div>
+    <div class="help" id="help">
+      <button id="helpClose" aria-label="Hide tips">×</button>
+      <b>Drag</b> terms from the tray onto the table. <b>Click</b> a hexagon to color it. <b>Double-click</b> to flip it. Push two hexagons <b>side to side</b> to label how they connect.
+    </div>
+  </section>
+  <section class="timeline" id="timeline" hidden aria-label="Timeline">
+    <div class="tl-bar">
+      <div class="seg" role="group" aria-label="Which terms">
+        <button class="btn" id="tlMine" aria-pressed="true">My table</button>
+        <button class="btn" id="tlAll" aria-pressed="false">All terms</button>
+      </div>
+      <p class="tl-note" id="tlNote"></p>
+      <div class="seg" role="group" aria-label="Timeline zoom">
+        <button class="btn icon" id="tlOut" aria-label="Squeeze timeline">−</button>
+        <button class="btn icon" id="tlIn" aria-label="Spread out timeline">+</button>
+      </div>
+    </div>
+    <div class="tl-scroll" id="tlScroll"><div class="tl-canvas" id="tlCanvas"></div></div>
+  </section>
+  <section class="wordbank" id="wordbank" hidden aria-label="Mental Word Bank">
+    <div class="tl-bar">
+      <select id="wbSec" aria-label="Section"></select>
+      <button class="btn" id="wbDraw"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="5.5" cy="5.5" r="1.3" fill="currentColor"/><circle cx="10.5" cy="10.5" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/></svg>Draw a question</button>
+      <p class="tl-note" id="wbNote"></p>
+    </div>
+    <div class="wb-body">
+      <aside class="wb-col wb-qs">
+        <h2 class="wb-h">Questions</h2>
+        <ol class="wb-list" id="wbList"></ol>
+        <form class="wb-addq" id="wbAddQ">
+          <label for="wbNewQ" class="wb-h">Write your own question</label>
+          <textarea id="wbNewQ" rows="2" maxlength="300" placeholder="How did…"></textarea>
+          <button class="btn" type="submit">Add question</button>
+        </form>
+      </aside>
+      <div class="wb-stage" id="wbStage"><div class="wb-canvas" id="wbCanvas"></div></div>
+      <aside class="wb-col wb-build">
+        <h2 class="wb-h">Answer builder</h2>
+        <div id="wbBuild"></div>
+        <h2 class="wb-h">Add evidence</h2>
+        <input type="search" id="wbSearch" placeholder="Search this guide's terms" aria-label="Search terms">
+        <div class="wb-terms" id="wbTerms"></div>
+      </aside>
+    </div>
+  </section>
+</div>
+
+<script id="study-data" type="application/json">
+{
+ "updated": "2026-11-01",
+ "source": "Hex Study Board Terms (Google Sheet)",
+ "sets": [
+  {
+   "id": "g-summer-yawp-ch-24",
+   "name": "Summer – Yawp Ch. 2–4",
+   "sections": [
+    "Period 1 review",
+    "Ch. 2 Colliding Cultures",
+    "Ch. 3 British North America",
+    "Ch. 4 Colonial Society"
+   ],
+   "terms": [
+    {
+     "id": "g-summer-yawp-ch-24--columbian-exchange",
+     "term": "Columbian Exchange",
+     "section": "Period 1 review",
+     "date": "1492 onward",
+     "def": "Transfer of plants, animals, people, and diseases between the Americas and Afro-Eurasia after Columbus's voyages."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--old-world-diseases",
+     "term": "Old World diseases",
+     "section": "Period 1 review",
+     "date": "1490s onward",
+     "def": "Smallpox, influenza, tuberculosis, and other diseases from Europe killed most of the Native population of the Americas."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--old-world-animals",
+     "term": "Old World animals",
+     "section": "Period 1 review",
+     "date": "1490s onward",
+     "def": "Horses, pigs, chickens, and sheep brought to the Americas, reshaping Native life and landscapes."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--new-world-crops",
+     "term": "New World crops",
+     "section": "Period 1 review",
+     "date": "1500s onward",
+     "def": "Potatoes, corn, peppers, and squash spread to Europe, Africa, and Asia, fueling population growth."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--old-world-crops",
+     "term": "Old World crops",
+     "section": "Period 1 review",
+     "date": "1490s onward",
+     "def": "Wheat, sugar, and bananas planted in the Americas; sugar drove the plantation system and the slave trade."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--catholic",
+     "term": "Catholic",
+     "section": "Period 1 review",
+     "date": "Reformation era, 1500s",
+     "def": "Roman Catholic Church; Spain, Portugal, and France spread Catholicism through conquest and missions."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--protestant",
+     "term": "Protestant",
+     "section": "Period 1 review",
+     "date": "Began 1517",
+     "def": "Christians who broke from the Catholic Church after Luther; their rivalry with Catholic powers fueled colonization."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--anglican-church",
+     "term": "Anglican Church",
+     "section": "Period 1 review",
+     "date": "1534",
+     "def": "Church of England, created when Henry VIII broke with Rome; the official church of England and several colonies."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--joint-stock-companies",
+     "term": "Joint-stock companies",
+     "section": "Period 1 review",
+     "date": "Late 1500s–1600s",
+     "def": "Businesses that pooled many investors' money to fund risky ventures such as colonies."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--exploration",
+     "term": "Exploration",
+     "section": "Period 1 review",
+     "date": "1400s–1500s",
+     "def": "European voyages, led by Portugal and Spain, seeking sea routes to Asian trade and new sources of wealth."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--conquistadors",
+     "term": "Conquistadors",
+     "section": "Period 1 review",
+     "date": "1500s",
+     "def": "Spanish soldier-explorers, such as Cortés and Pizarro, who conquered the Aztec and Inca empires."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--african-gold",
+     "term": "African gold",
+     "section": "Period 1 review",
+     "date": "1400s–1500s",
+     "def": "West African gold drew Portuguese traders down the African coast and helped fund further exploration."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--silver-spices-sugar-and-slaves",
+     "term": "Silver, spices, sugar, and slaves",
+     "section": "Period 1 review",
+     "date": "1500s–1700s",
+     "def": "The main sources of colonial wealth; profits from them drove European competition overseas."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--potosi",
+     "term": "Potosí",
+     "section": "Period 1 review",
+     "date": "Silver found 1545",
+     "def": "Andean silver mountain mined by forced Native labor; its silver flooded Spain and world markets."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--encomienda-system",
+     "term": "Encomienda system",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1500s",
+     "def": "Spanish grant giving colonists the labor and tribute of Native people in return for 'protecting' and converting them."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--catholic-missions",
+     "term": "Catholic missions",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1500s–1700s",
+     "def": "Spanish and French religious outposts that converted Native people and relied on their labor."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--bartolome-de-las-casas",
+     "term": "Bartolomé de las Casas",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1484–1566",
+     "def": "Spanish friar who condemned the abuse of Native people; his writings fed the 'Black Legend.'"
+    },
+    {
+     "id": "g-summer-yawp-ch-24--new-france",
+     "term": "New France",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Quebec founded 1608",
+     "def": "French colony along the St. Lawrence and Great Lakes, built on the fur trade and missions, with few settlers."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--fur-trade",
+     "term": "Fur trade",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1600s",
+     "def": "Exchange of beaver pelts for European goods that tied French and Dutch traders to Native partners."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--french-huron-alliance",
+     "term": "French-Huron alliance",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Early 1600s",
+     "def": "Trade and military partnership between New France and the Huron (Wendat) against the Iroquois."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--new-netherland",
+     "term": "New Netherland",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1614–1664",
+     "def": "Dutch colony on the Hudson River centered on New Amsterdam; England took it and renamed it New York."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--dutch-west-india-company",
+     "term": "Dutch West India Company",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Chartered 1621",
+     "def": "Dutch trading company that ran New Netherland and took part in the Atlantic slave trade."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--mercantilism",
+     "term": "Mercantilism",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1600s–1700s",
+     "def": "Belief that colonies exist to enrich the home country by supplying raw materials and buying its goods."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--roanoke",
+     "term": "Roanoke",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1585–1590",
+     "def": "England's 'Lost Colony' on the Outer Banks; its settlers had vanished by 1590."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--virginia-company",
+     "term": "Virginia Company",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Chartered 1606",
+     "def": "Joint-stock company that founded Jamestown hoping to profit from gold and trade."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--jamestown",
+     "term": "Jamestown",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Founded 1607",
+     "def": "First permanent English colony in North America, nearly destroyed by disease, hunger, and conflict."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--powhatan-confederacy",
+     "term": "Powhatan Confederacy",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "c. 1607",
+     "def": "Alliance of Algonquian peoples led by Powhatan, father of Pocahontas, that both traded with and fought Jamestown."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--the-starving-time",
+     "term": "The Starving Time",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Winter 1609–1610",
+     "def": "Famine at Jamestown that killed most of the colonists."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--tobacco-economy",
+     "term": "Tobacco economy",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1610s onward",
+     "def": "After John Rolfe's tobacco took off around 1614, Virginia boomed and demanded more land and labor."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--headright-system",
+     "term": "Headright system",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1618",
+     "def": "Granted 50 acres to anyone who paid a person's passage to Virginia, encouraging indentured servitude."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--house-of-burgesses",
+     "term": "House of Burgesses",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1619",
+     "def": "Virginia's elected assembly, the first representative legislature in English America."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--indentured-servitude",
+     "term": "Indentured servitude",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1600s",
+     "def": "Laborers worked several years without wages in exchange for passage to the colonies."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--puritans",
+     "term": "Puritans",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Great Migration, 1630s",
+     "def": "English Calvinists who sought to purify the Church of England and founded Massachusetts Bay."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--1610s-new-england-epidemics",
+     "term": "1610s New England epidemics",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1616–1619",
+     "def": "Disease outbreaks that killed most coastal Native people shortly before the Pilgrims and Puritans arrived."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--city-on-a-hill",
+     "term": "“City on a Hill”",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1630",
+     "def": "John Winthrop's vision of Massachusetts Bay as a model Christian community the world would watch."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--town-covenants-and-town-meetings",
+     "term": "Town covenants and town meetings",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "1630s onward",
+     "def": "New England towns were founded by covenant and governed by meetings of male residents."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--anne-hutchinson",
+     "term": "Anne Hutchinson",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Banished 1638",
+     "def": "Puritan woman who challenged ministers' authority and was banished from Massachusetts."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--roger-williams",
+     "term": "Roger Williams",
+     "section": "Ch. 2 Colliding Cultures",
+     "date": "Founded Rhode Island 1636",
+     "def": "Minister banished from Massachusetts who founded Rhode Island on religious freedom."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--pequot-war",
+     "term": "Pequot War",
+     "section": "Ch. 3 British North America",
+     "date": "1636–1638",
+     "def": "War between Puritans and the Pequot; the Mystic massacre nearly destroyed the Pequot nation."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--king-philip-s-war",
+     "term": "King Philip's War",
+     "section": "Ch. 3 British North America",
+     "date": "1675–1676",
+     "def": "War between New England colonists and a Native coalition led by Metacom; one of the deadliest wars per capita in American history."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--metacom",
+     "term": "Metacom",
+     "section": "Ch. 3 British North America",
+     "date": "Died 1676",
+     "def": "Wampanoag leader, called King Philip by the English, who led a Native coalition against New England."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--caribbean-sugar-slavery",
+     "term": "Caribbean sugar slavery",
+     "section": "Ch. 3 British North America",
+     "date": "1600s–1700s",
+     "def": "Sugar plantations in Barbados and Jamaica worked enslaved Africans brutally, with very high death rates."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--middle-passage",
+     "term": "Middle Passage",
+     "section": "Ch. 3 British North America",
+     "date": "1500s–1800s",
+     "def": "The deadly Atlantic crossing that carried enslaved Africans to the Americas."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--triangular-trade",
+     "term": "Triangular Trade",
+     "section": "Ch. 3 British North America",
+     "date": "1600s–1700s",
+     "def": "Atlantic trade linking Europe, Africa, and the Americas in manufactured goods, enslaved people, and plantation crops."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--chattel-slavery",
+     "term": "Chattel slavery",
+     "section": "Ch. 3 British North America",
+     "date": "Late 1600s",
+     "def": "Slavery in which enslaved people were property for life, with that status passed to their children."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--slave-codes",
+     "term": "Slave codes",
+     "section": "Ch. 3 British North America",
+     "date": "1660s onward",
+     "def": "Colonial laws, such as Virginia's 1662 law on inherited status, that made slavery racial and permanent."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--paternal-dominion",
+     "term": "Paternal dominion",
+     "section": "Ch. 3 British North America",
+     "date": "1600s–1700s",
+     "def": "Idea that household heads ruled over wives, children, servants, and enslaved people; used to justify slavery."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--plantation-slavery",
+     "term": "Plantation slavery",
+     "section": "Ch. 3 British North America",
+     "date": "1600s–1700s",
+     "def": "Large farms that used enslaved labor to grow cash crops such as tobacco, rice, and sugar."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--quakers",
+     "term": "Quakers",
+     "section": "Ch. 3 British North America",
+     "date": "Pennsylvania founded 1681",
+     "def": "Religious group stressing the inner light and equality; William Penn founded Pennsylvania as a tolerant colony."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--religious-tolerance",
+     "term": "Religious tolerance",
+     "section": "Ch. 3 British North America",
+     "date": "1630s–1680s",
+     "def": "Rhode Island, Maryland's 1649 Toleration Act, and Pennsylvania allowed people of differing faiths to worship."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--native-american-alliances",
+     "term": "Native American alliances",
+     "section": "Ch. 3 British North America",
+     "date": "1600s–1700s",
+     "def": "Native nations allied with European powers for trade and protection, shaping colonial wars."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--salem-witch-trials",
+     "term": "Salem Witch Trials",
+     "section": "Ch. 3 British North America",
+     "date": "1692",
+     "def": "Witchcraft accusations in Salem, Massachusetts, led to 20 executions amid fear and social tension."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--william-berkeley",
+     "term": "William Berkeley",
+     "section": "Ch. 3 British North America",
+     "date": "Governor 1642–52, 1660–77",
+     "def": "Virginia's royal governor, whose refusal to back attacks on Native people helped spark Bacon's Rebellion."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--nathaniel-bacon",
+     "term": "Nathaniel Bacon",
+     "section": "Ch. 3 British North America",
+     "date": "Bacon's Rebellion, 1676",
+     "def": "Planter who led poor freemen and servants against Berkeley and Native people; afterward planters turned to enslaved labor."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--pope",
+     "term": "Popé",
+     "section": "Ch. 3 British North America",
+     "date": "Pueblo Revolt, 1680",
+     "def": "Pueblo religious leader who organized the revolt that drove the Spanish from New Mexico for 12 years."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--consumer-revolution",
+     "term": "Consumer Revolution",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1700s",
+     "def": "Rising colonial purchases of British goods such as tea, cloth, and ceramics, which tied colonists to Britain."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--colonial-currencies",
+     "term": "Colonial currencies",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1690 onward",
+     "def": "Colonies printed paper money to ease shortages of coin, which Parliament later restricted."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--navigation-acts",
+     "term": "Navigation Acts",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1651 onward",
+     "def": "English laws requiring colonial trade to use English ships and route key goods through England."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--smuggling",
+     "term": "Smuggling",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1700s",
+     "def": "Illegal trade that avoided the Navigation Acts, often with French and Dutch Caribbean islands."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--colonial-cities",
+     "term": "Colonial cities",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1700s",
+     "def": "Ports such as Boston, New York, Philadelphia, and Charleston grew into centers of trade and politics."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--colonial-assemblies",
+     "term": "Colonial assemblies",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1600s–1700s",
+     "def": "Elected colonial legislatures that controlled taxes and grew powerful during salutary neglect."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--social-contract",
+     "term": "Social contract",
+     "section": "Ch. 4 Colonial Society",
+     "date": "Late 1600s",
+     "def": "Idea, from John Locke and others, that government's power comes from the consent of the governed."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--first-great-awakening",
+     "term": "First Great Awakening",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1730s–1740s",
+     "def": "Religious revivals that stressed emotional conversion and challenged established ministers."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--george-whitefield",
+     "term": "George Whitefield",
+     "section": "Ch. 4 Colonial Society",
+     "date": "Colonial tours from 1739",
+     "def": "English preacher whose open-air sermons drew huge crowds across the colonies."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--british-territorial-gains",
+     "term": "British territorial gains",
+     "section": "Ch. 4 Colonial Society",
+     "date": "Treaty of Paris, 1763",
+     "def": "After the Seven Years' War, Britain took Canada, Florida, and land east of the Mississippi."
+    },
+    {
+     "id": "g-summer-yawp-ch-24--british-war-debt",
+     "term": "British war debt",
+     "section": "Ch. 4 Colonial Society",
+     "date": "1763",
+     "def": "The Seven Years' War nearly doubled Britain's debt, leading Parliament to tax the colonies."
+    }
+   ],
+   "questions": [
+    {
+     "id": "q-why-did-the-columbian-exchange-have-such-differe",
+     "section": "Period 1 review",
+     "text": "Why did the Columbian Exchange have such different demographic impacts in Europe, the Americas, and Asia?"
+    },
+    {
+     "id": "q-how-did-the-protestant-reformation-intensify-com",
+     "section": "Period 1 review",
+     "text": "How did the Protestant Reformation intensify competition among European nations for overseas wealth and influence?"
+    },
+    {
+     "id": "q-why-were-portugal-and-spain-the-first-european-p",
+     "section": "Period 1 review",
+     "text": "Why were Portugal and Spain the first European powers to establish direct trade with Africa and Asia and to colonize the Americas?"
+    },
+    {
+     "id": "q-how-did-the-black-legend-justify-and-shape-the-c",
+     "section": "Ch. 2 Colliding Cultures",
+     "text": "How did the “Black Legend” justify and shape the colonization efforts of Spain’s North American colonial rivals: French, Dutch, and English?"
+    },
+    {
+     "id": "q-compare-and-contrast-the-motives-for-colonizatio",
+     "section": "Ch. 2 Colliding Cultures",
+     "text": "Compare and contrast the motives for colonization among the French, Dutch, and English. Why did these motives produce different relationships with Native American peoples?"
+    },
+    {
+     "id": "q-why-did-jamestown-experience-such-hardships-in-i",
+     "section": "Ch. 2 Colliding Cultures",
+     "text": "Why did Jamestown experience such hardships in its first 15 years of colonization, and why did cultivation of tobacco represent a significant turning point in that colony’s history?"
+    },
+    {
+     "id": "q-how-did-the-calvinist-puritan-beliefs-shape-the-",
+     "section": "Ch. 2 Colliding Cultures",
+     "text": "How did the Calvinist Puritan beliefs shape the New England colonies in their first century?"
+    },
+    {
+     "id": "q-how-did-new-england-s-environment-and-social-str",
+     "section": "Ch. 2 Colliding Cultures",
+     "text": "How did New England's environment and social structure combine to produce “broadly shared modest prosperity” and high life expectancy?"
+    },
+    {
+     "id": "q-native-american-enslavement-how-did-colonists-ac",
+     "section": "Ch. 3 British North America",
+     "text": "Native American Enslavement: How did colonists acquire enslaved Native Americans, and why was this labor system largely supplanted by African enslavement by the late 17th century?"
+    },
+    {
+     "id": "q-african-enslavement-what-was-the-middle-passage-",
+     "section": "Ch. 3 British North America",
+     "text": "African Enslavement: What was the Middle Passage, and why did vastly more enslaved Africans end up in the Caribbean and Brazil than in British North America? How did racial ideas and colonial laws develop in the 17th century to justify and create a permanent system of racial slavery?"
+    },
+    {
+     "id": "q-the-new-colonies-how-did-new-colonies-such-as-ma",
+     "section": "Ch. 3 British North America",
+     "text": "The New Colonies: How did new colonies such as Maryland, Pennsylvania, and the Carolinas attract new European settlers? How did these strategies influence who lived in these emerging societies?"
+    },
+    {
+     "id": "q-how-did-the-following-three-nearly-concurrent-co",
+     "section": "Ch. 3 British North America",
+     "text": "How did the following three nearly concurrent conflicts reshape the relationship between Europeans, Native Americans, and enslaved Africans? King Philip’s War (New England), Bacon’s Rebellion (Virginia), Pueblo Revolt (New Mexico)"
+    },
+    {
+     "id": "q-mercantile-trade-and-british-identity-how-did-at",
+     "section": "Ch. 4 Colonial Society",
+     "text": "Mercantile Trade and British Identity: How did Atlantic economic exchange shape colonists' sense of identity in the 1700s? In what ways did it strengthen ties to Britain, and where did it begin to produce distinctly American patterns?"
+    },
+    {
+     "id": "q-triangular-trade-in-what-ways-did-north-american",
+     "section": "Ch. 4 Colonial Society",
+     "text": "Triangular Trade: In what ways did North American colonists engage in a global web of commerce? What evidence shows that the British North American colonies were not the most significant players in the Atlantic economy?"
+    },
+    {
+     "id": "q-colonial-governments-how-did-colonial-government",
+     "section": "Ch. 4 Colonial Society",
+     "text": "Colonial Governments: How did colonial governments develop political cultures distinct from Europe during a period of “salutary neglect”?"
+    },
+    {
+     "id": "q-religion-how-did-the-first-great-awakening-chall",
+     "section": "Ch. 4 Colonial Society",
+     "text": "Religion: How did the First Great Awakening challenge existing religious authorities and lead to greater religious pluralism in the colonies?"
+    },
+    {
+     "id": "q-the-seven-years-war-aka-the-french-and-indian-wa",
+     "section": "Ch. 4 Colonial Society",
+     "text": "The Seven Years War (AKA the French and Indian War): How did this war bring American colonists into closer contact with British authorities, and how would those interactions become a source of tension with Parliament in the years that followed?"
+    }
+   ]
+  },
+  {
+   "id": "g-p3-revolutionary-generation",
+   "name": "P3 – Revolutionary Generation",
+   "sections": [
+    "Ch. 6 The American Revolution",
+    "Ch. 7 A New Nation"
+   ],
+   "terms": [
+    {
+     "id": "g-p3-revolutionary-generation--salutary-neglect",
+     "term": "Salutary neglect",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1720s–1750s",
+     "def": "Britain's loose enforcement of trade laws, which let the colonies largely govern themselves."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--colonial-assemblies",
+     "term": "Colonial assemblies",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1600s–1700s",
+     "def": "Elected colonial legislatures that controlled local taxes and grew used to self-rule."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--republicanism",
+     "term": "Republicanism",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1700s",
+     "def": "Belief that power should rest with the people and virtuous citizens who put the common good first, with no king."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--enlightenment-and-john-locke",
+     "term": "Enlightenment and John Locke",
+     "section": "Ch. 6 The American Revolution",
+     "date": "Late 1600s–1700s",
+     "def": "Reason-based ideas; Locke argued people hold natural rights and may replace a government that violates them."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--first-great-awakening",
+     "term": "First Great Awakening",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1730s–1740s",
+     "def": "Religious revivals that stressed personal conversion and challenged established ministers."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--george-whitefield",
+     "term": "George Whitefield",
+     "section": "Ch. 6 The American Revolution",
+     "date": "Colonial tours from 1739",
+     "def": "English preacher whose open-air sermons drew huge crowds across the colonies."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--french-and-indian-war",
+     "term": "French and Indian War",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1754–1763",
+     "def": "War between Britain and France and their Native allies; Britain won Canada and land to the Mississippi."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--impressment",
+     "term": "Impressment",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1700s",
+     "def": "British navy forcing sailors, including colonists, into service against their will."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--british-war-debt",
+     "term": "British war debt",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1763",
+     "def": "The French and Indian War nearly doubled Britain's debt, so Parliament sought revenue from the colonies."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--george-iii",
+     "term": "George III",
+     "section": "Ch. 6 The American Revolution",
+     "date": "Reigned 1760–1820",
+     "def": "King of Great Britain during the Revolution; the Declaration lists colonial grievances against him."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--proclamation-of-1763",
+     "term": "Proclamation of 1763",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1763",
+     "def": "Banned colonial settlement west of the Appalachians to prevent Native wars, angering land-hungry colonists."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--sugar-act",
+     "term": "Sugar Act",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1764",
+     "def": "Cut the tax on foreign molasses but enforced it strictly to raise revenue and stop smuggling."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--currency-act",
+     "term": "Currency Act",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1764",
+     "def": "Barred colonies from issuing paper money as legal tender, worsening a shortage of cash."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--mercantilism",
+     "term": "Mercantilism",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1600s–1700s",
+     "def": "Belief that colonies exist to enrich the home country by supplying raw materials and buying its goods."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--stamp-act",
+     "term": "Stamp Act",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1765",
+     "def": "First direct tax on colonists, on printed paper such as newspapers and legal documents; repealed in 1766."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--virginia-resolves",
+     "term": "Virginia Resolves",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1765",
+     "def": "Patrick Henry's resolutions declaring that only Virginia's own assembly could tax Virginians."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--stamp-act-congress",
+     "term": "Stamp Act Congress",
+     "section": "Ch. 6 The American Revolution",
+     "date": "October 1765",
+     "def": "Delegates from nine colonies jointly protested taxation without representation."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--townshend-acts",
+     "term": "Townshend Acts",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1767",
+     "def": "Taxes on imported glass, lead, paint, paper, and tea, with revenue used to pay royal officials."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--boycotts-non-importation-agreements",
+     "term": "Boycotts (non-importation agreements)",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1765–1770s",
+     "def": "Colonists refused to buy British goods, and women spun homemade cloth to replace them."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--boston-massacre",
+     "term": "Boston Massacre",
+     "section": "Ch. 6 The American Revolution",
+     "date": "March 5, 1770",
+     "def": "British soldiers killed five Bostonians; Patriots like Paul Revere spread it as anti-British propaganda."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--virtual-vs-actual-representation",
+     "term": "Virtual vs. actual representation",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1760s",
+     "def": "Britain said Parliament represented all subjects; colonists insisted they be taxed only by representatives they elected."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--no-taxation-without-representation",
+     "term": "“No taxation without representation”",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1760s",
+     "def": "Colonial slogan arguing that only elected colonial assemblies could tax colonists."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--tea-act",
+     "term": "Tea Act",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1773",
+     "def": "Gave the East India Company a tea monopoly, lowering prices but asserting Parliament's right to tax."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--boston-tea-party",
+     "term": "Boston Tea Party",
+     "section": "Ch. 6 The American Revolution",
+     "date": "December 16, 1773",
+     "def": "Patriots dumped 342 chests of East India Company tea into Boston Harbor."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--coercive-acts",
+     "term": "Coercive Acts",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1774",
+     "def": "Punished Massachusetts by closing Boston's port and limiting self-government; colonists called them the Intolerable Acts."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--continental-congress",
+     "term": "Continental Congress",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1774 onward",
+     "def": "Delegates from the colonies who coordinated resistance, then ran the war and declared independence."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--olive-branch-petition",
+     "term": "Olive Branch Petition",
+     "section": "Ch. 6 The American Revolution",
+     "date": "July 1775",
+     "def": "Congress's final appeal to George III for peace, which he refused to read."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--proclamation-for-suppressing-rebellion",
+     "term": "Proclamation for Suppressing Rebellion",
+     "section": "Ch. 6 The American Revolution",
+     "date": "August 1775",
+     "def": "George III declared the colonies in open rebellion, closing the door to compromise."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--thomas-paine-s-common-sense",
+     "term": "Thomas Paine's Common Sense",
+     "section": "Ch. 6 The American Revolution",
+     "date": "January 1776",
+     "def": "Best-selling pamphlet that attacked monarchy and urged immediate independence."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--lord-dunmore-s-proclamation",
+     "term": "Lord Dunmore's Proclamation",
+     "section": "Ch. 6 The American Revolution",
+     "date": "November 1775",
+     "def": "Virginia's royal governor offered freedom to enslaved people of Patriot owners who fought for Britain."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--declaration-of-independence",
+     "term": "Declaration of Independence",
+     "section": "Ch. 6 The American Revolution",
+     "date": "July 4, 1776",
+     "def": "Jefferson's statement that all men are created equal with unalienable rights, justifying the break with Britain."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--continental-soldiers",
+     "term": "Continental soldiers",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1775–1783",
+     "def": "Washington's army, made up largely of poor men who served long enlistments for pay and land."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--women-in-the-revolution",
+     "term": "Women in the Revolution",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1775–1783",
+     "def": "Women ran farms and businesses, led boycotts, raised money, and cooked and nursed for the armies."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--enslaved-people-in-the-revolution",
+     "term": "Enslaved people in the Revolution",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1775–1783",
+     "def": "Thousands fled to the British for freedom; others fought for the Patriots, also seeking freedom."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--loyalists",
+     "term": "Loyalists",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1775–1783",
+     "def": "Colonists, roughly a fifth of the population, who stayed loyal to Britain; many left after the war."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--native-peoples-in-the-revolution",
+     "term": "Native peoples in the Revolution",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1775–1783",
+     "def": "Most Native nations sided with Britain to stop settler expansion and lost land after the war."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--shifting-british-war-strategy",
+     "term": "Shifting British war strategy",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1778 onward",
+     "def": "After the defeat at Saratoga, Britain turned south, hoping to rally Loyalists and enslaved people."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--american-victory",
+     "term": "American victory",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1781–1783",
+     "def": "French aid, Washington's leadership, British errors, and luck brought victory at Yorktown and the 1783 Treaty of Paris."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--popular-sovereignty",
+     "term": "Popular sovereignty",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1700s",
+     "def": "Idea that a government's power comes from the people."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--limited-government",
+     "term": "Limited government",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1700s",
+     "def": "Idea that a government's powers must be restricted to protect liberty."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--natural-rights",
+     "term": "Natural rights",
+     "section": "Ch. 6 The American Revolution",
+     "date": "1700s",
+     "def": "Rights such as life, liberty, and property that people hold by nature rather than by a ruler's grant."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--articles-of-confederation",
+     "term": "Articles of Confederation",
+     "section": "Ch. 7 A New Nation",
+     "date": "Ratified 1781",
+     "def": "First U.S. government; its weak Congress could not tax, regulate trade, or enforce laws."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--treaties-under-the-articles",
+     "term": "Treaties under the Articles",
+     "section": "Ch. 7 A New Nation",
+     "date": "1780s",
+     "def": "Congress could not make the states honor treaties, including terms of the 1783 Treaty of Paris."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--tariffs-and-regulation-of-commerce",
+     "term": "Tariffs and regulation of commerce",
+     "section": "Ch. 7 A New Nation",
+     "date": "1780s",
+     "def": "Congress could not tax imports or regulate trade, so states set competing duties."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--inflation",
+     "term": "Inflation",
+     "section": "Ch. 7 A New Nation",
+     "date": "1770s–1780s",
+     "def": "Wartime paper money lost value, hurting soldiers, farmers, and others paid in it."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--shays-rebellion",
+     "term": "Shays' Rebellion",
+     "section": "Ch. 7 A New Nation",
+     "date": "1786–1787",
+     "def": "Massachusetts farmers rose up over debts and taxes, convincing leaders the Articles were too weak."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--northwest-ordinance",
+     "term": "Northwest Ordinance",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Set how territories become states and banned slavery north of the Ohio River."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--virginia-plan",
+     "term": "Virginia Plan",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "James Madison's proposal for a strong national government with representation by population."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--three-branches-of-government",
+     "term": "Three branches of government",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "The Constitution's legislative, executive, and judicial branches."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--separation-of-powers",
+     "term": "Separation of powers",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Dividing government's powers among three branches so that no one holds them all."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--checks-and-balances",
+     "term": "Checks and balances",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Each branch can limit the others, as with a presidential veto or Senate confirmation."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--veto-power",
+     "term": "Veto power",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "The president can reject a bill; Congress can override with a two-thirds vote of both houses."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--advise-and-consent",
+     "term": "“Advise and consent”",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "The Senate must approve treaties (by two-thirds) and major presidential appointments."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--federalism",
+     "term": "Federalism",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Division of power between the national government and the states, which keep reserved powers."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--great-compromise",
+     "term": "Great Compromise",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Created a Senate with equal votes for each state and a House based on population."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--three-fifths-compromise",
+     "term": "Three-Fifths Compromise",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Counted three-fifths of enslaved people for representation and taxes, boosting slave states' power."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--slave-trade-compromise",
+     "term": "Slave Trade Compromise",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787",
+     "def": "Barred Congress from banning the Atlantic slave trade until 1808."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--bill-of-rights",
+     "term": "Bill of Rights",
+     "section": "Ch. 7 A New Nation",
+     "date": "Ratified 1791",
+     "def": "First ten amendments protecting individual liberties, promised to win over doubters during ratification."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--federalist-papers",
+     "term": "Federalist Papers",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787–1788",
+     "def": "Essays by Hamilton, Madison, and Jay urging New York to ratify the Constitution."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--federalists",
+     "term": "Federalists",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787–1788",
+     "def": "Supporters of the Constitution and a stronger national government."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--anti-federalists",
+     "term": "Anti-Federalists",
+     "section": "Ch. 7 A New Nation",
+     "date": "1787–1788",
+     "def": "Opponents of the Constitution who feared central power and demanded a bill of rights."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--cabinet",
+     "term": "Cabinet",
+     "section": "Ch. 7 A New Nation",
+     "date": "1789",
+     "def": "Washington's heads of executive departments, including Hamilton at Treasury and Jefferson at State."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--hamilton-s-debt-proposal",
+     "term": "Hamilton's debt proposal",
+     "section": "Ch. 7 A New Nation",
+     "date": "1790",
+     "def": "Plan for the federal government to pay national and state war debts in full, building public credit."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--report-on-manufactures",
+     "term": "Report on Manufactures",
+     "section": "Ch. 7 A New Nation",
+     "date": "1791",
+     "def": "Hamilton's plan to grow American industry with tariffs and subsidies; Congress largely rejected it."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--federalist-party",
+     "term": "Federalist Party",
+     "section": "Ch. 7 A New Nation",
+     "date": "1790s",
+     "def": "Hamilton and Adams's party, favoring strong central government, commerce, and ties to Britain."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--democratic-republican-party",
+     "term": "Democratic-Republican Party",
+     "section": "Ch. 7 A New Nation",
+     "date": "1790s",
+     "def": "Jefferson and Madison's party, favoring states' rights, farmers, and friendship with France."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--first-party-system",
+     "term": "First Party System",
+     "section": "Ch. 7 A New Nation",
+     "date": "1790s–1810s",
+     "def": "The rivalry between the Federalists and the Democratic-Republicans."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--whiskey-rebellion",
+     "term": "Whiskey Rebellion",
+     "section": "Ch. 7 A New Nation",
+     "date": "1794",
+     "def": "Western Pennsylvania farmers resisted a federal whiskey tax; Washington sent troops to end it."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--washington-s-farewell-address",
+     "term": "Washington's Farewell Address",
+     "section": "Ch. 7 A New Nation",
+     "date": "1796",
+     "def": "Washington warned against political parties and permanent foreign alliances."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--election-of-1796",
+     "term": "Election of 1796",
+     "section": "Ch. 7 A New Nation",
+     "date": "1796",
+     "def": "John Adams won the presidency, and his rival Thomas Jefferson became vice president."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--quasi-war-with-france",
+     "term": "Quasi-War with France",
+     "section": "Ch. 7 A New Nation",
+     "date": "1798–1800",
+     "def": "Undeclared naval war with France that followed the XYZ Affair."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--alien-and-sedition-acts",
+     "term": "Alien and Sedition Acts",
+     "section": "Ch. 7 A New Nation",
+     "date": "1798",
+     "def": "Federalist laws targeting immigrants and making criticism of the government a crime."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--virginia-and-kentucky-resolutions",
+     "term": "Virginia and Kentucky Resolutions",
+     "section": "Ch. 7 A New Nation",
+     "date": "1798",
+     "def": "Madison and Jefferson argued states could judge federal laws, like the Sedition Act, unconstitutional."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--thomas-jefferson",
+     "term": "Thomas Jefferson",
+     "section": "Ch. 7 A New Nation",
+     "date": "1743–1826",
+     "def": "Author of the Declaration of Independence, Democratic-Republican leader, and third president."
+    },
+    {
+     "id": "g-p3-revolutionary-generation--election-of-1800",
+     "term": "Election of 1800",
+     "section": "Ch. 7 A New Nation",
+     "date": "1800",
+     "def": "Jefferson defeated Adams in the first peaceful transfer of power between rival parties."
+    }
+   ],
+   "questions": [
+    {
+     "id": "q-historians-refer-to-the-relationship-between-the",
+     "section": "Ch. 6 The American Revolution",
+     "text": "Historians refer to the relationship between the colonies and the British government in the early 18th century as “Salutary Neglect.” How had the political and economic culture of the colonies changed during these decades of lenient enforcement of trade laws?"
+    },
+    {
+     "id": "q-how-did-the-french-and-indian-war-seven-years-wa",
+     "section": "Ch. 6 The American Revolution",
+     "text": "How did the French and Indian War (Seven Years War) redefine Anglo-American relations and set the stage for conflict?"
+    },
+    {
+     "id": "q-in-what-ways-did-both-british-taxation-policies-",
+     "section": "Ch. 6 The American Revolution",
+     "text": "In what ways did both British taxation policies and American protests escalate from 1765 to 1773? Consider both actions and ideology."
+    },
+    {
+     "id": "q-how-did-the-british-response-to-the-tea-party-pr",
+     "section": "Ch. 6 The American Revolution",
+     "text": "How did the British response to the Tea Party provoke escalating American violence and calls for independence?"
+    },
+    {
+     "id": "q-the-war-for-independence-who-participated-who-re",
+     "section": "Ch. 6 The American Revolution",
+     "text": "The War for Independence: Who participated? Who refused? What did the war mean, and how did the meaning change over time? How did Americans win this war?"
+    },
+    {
+     "id": "q-the-declaration-of-independence-will-over-time-b",
+     "section": "Ch. 6 The American Revolution",
+     "text": "The Declaration of Independence will, over time, become a foundational document in every civil rights movement from labor to women to Black equality. Which ideals does the Declaration claim our nation will uphold?"
+    },
+    {
+     "id": "q-the-post-war-period-was-a-disaster-what-hardship",
+     "section": "Ch. 7 A New Nation",
+     "text": "The post-war period was a disaster! What hardships did Americans endure, and why were the Articles of Confederation government unequipped to manage such crises?"
+    },
+    {
+     "id": "q-how-did-the-constitution-balance-regional-intere",
+     "section": "Ch. 7 A New Nation",
+     "text": "How did the Constitution balance regional interests, i.e. small states and populous states, slave states and states with few or no enslaved people?"
+    },
+    {
+     "id": "q-james-madison-saw-tyranny-of-the-majority-as-the",
+     "section": "Ch. 7 A New Nation",
+     "text": "James Madison saw tyranny of the majority as the greatest threat to republican government. How did the Constitution seek to prevent one faction from seizing control and abusing all levers of power?"
+    },
+    {
+     "id": "q-hamiltons-financial-plan-was-bold-daring-and-ing",
+     "section": "Ch. 7 A New Nation",
+     "text": "Hamilton’s Financial Plan was bold, daring, and ingenious. So why did it face so much opposition that it gave rise to the first two political parties?"
+    },
+    {
+     "id": "q-what-were-the-fears-of-the-democratic-republican",
+     "section": "Ch. 7 A New Nation",
+     "text": "What were the fears of the Democratic-Republicans and the Federalists? What did each party fear was the threat to securing the promises of the Revolution?"
+    },
+    {
+     "id": "q-how-did-the-political-crises-of-the-1790s-push-b",
+     "section": "Ch. 7 A New Nation",
+     "text": "How did the political crises of the 1790s push both political parties to argue that they were the true defenders of the US Constitution? (And, why did the Federalist Party lose the trust of many Americans in the late 1790s?)"
+    }
+   ]
+  },
+  {
+   "id": "g-p4-sectional-republic",
+   "name": "P4 – Sectional Republic",
+   "sections": [
+    "Political transformation",
+    "Market Revolution",
+    "Cotton Revolution",
+    "Religion and reform"
+   ],
+   "terms": [
+    {
+     "id": "g-p4-sectional-republic--revolution-of-1800",
+     "term": "“Revolution of 1800”",
+     "section": "Political transformation",
+     "date": "1800",
+     "def": "Jefferson cast his win as a return of power to the people, with a plain style and smaller government."
+    },
+    {
+     "id": "g-p4-sectional-republic--agrarian-republic",
+     "term": "Agrarian republic",
+     "section": "Political transformation",
+     "date": "c. 1800",
+     "def": "Jefferson's ideal of a nation of independent yeoman farmers, whom he saw as the most virtuous citizens."
+    },
+    {
+     "id": "g-p4-sectional-republic--republican-motherhood",
+     "term": "Republican Motherhood",
+     "section": "Political transformation",
+     "date": "Late 1700s–1800s",
+     "def": "Idea that women served the republic by raising virtuous citizens, which justified educating women."
+    },
+    {
+     "id": "g-p4-sectional-republic--louisiana-purchase",
+     "term": "Louisiana Purchase",
+     "section": "Political transformation",
+     "date": "1803",
+     "def": "Jefferson bought Louisiana from France for $15 million, doubling the nation's size."
+    },
+    {
+     "id": "g-p4-sectional-republic--jefferson-s-economic-plan",
+     "term": "Jefferson's economic plan",
+     "section": "Political transformation",
+     "date": "1801–1809",
+     "def": "With Treasury Secretary Albert Gallatin, Jefferson cut taxes, the military, and the national debt."
+    },
+    {
+     "id": "g-p4-sectional-republic--barbary-wars",
+     "term": "Barbary Wars",
+     "section": "Political transformation",
+     "date": "1801–1805, 1815",
+     "def": "U.S. naval wars against North African states that demanded tribute from American ships."
+    },
+    {
+     "id": "g-p4-sectional-republic--strict-constructionism",
+     "term": "Strict constructionism",
+     "section": "Political transformation",
+     "date": "1790s–1800s",
+     "def": "Reading the Constitution narrowly, so the government has only the powers it specifically lists."
+    },
+    {
+     "id": "g-p4-sectional-republic--embargo-act-of-1807",
+     "term": "Embargo Act of 1807",
+     "section": "Political transformation",
+     "date": "1807",
+     "def": "Banned American exports to pressure Britain and France; it wrecked American trade instead."
+    },
+    {
+     "id": "g-p4-sectional-republic--chief-justice-john-marshall",
+     "term": "Chief Justice John Marshall",
+     "section": "Political transformation",
+     "date": "Chief Justice 1801–1835",
+     "def": "Federalist chief justice whose rulings strengthened the Supreme Court and federal power."
+    },
+    {
+     "id": "g-p4-sectional-republic--supremacy-and-commerce-clauses",
+     "term": "Supremacy and Commerce clauses",
+     "section": "Political transformation",
+     "date": "1787",
+     "def": "Constitution makes federal law supreme over state law and lets Congress regulate interstate trade."
+    },
+    {
+     "id": "g-p4-sectional-republic--judicial-review",
+     "term": "Judicial review",
+     "section": "Political transformation",
+     "date": "Established 1803",
+     "def": "The courts' power to strike down laws that conflict with the Constitution."
+    },
+    {
+     "id": "g-p4-sectional-republic--marbury-v-madison",
+     "term": "Marbury v. Madison",
+     "section": "Political transformation",
+     "date": "1803",
+     "def": "Supreme Court case that established judicial review."
+    },
+    {
+     "id": "g-p4-sectional-republic--mcculloch-v-maryland",
+     "term": "McCulloch v. Maryland",
+     "section": "Political transformation",
+     "date": "1819",
+     "def": "Upheld the national bank as constitutional and barred states from taxing it."
+    },
+    {
+     "id": "g-p4-sectional-republic--gibbons-v-ogden",
+     "term": "Gibbons v. Ogden",
+     "section": "Political transformation",
+     "date": "1824",
+     "def": "Ruled that Congress, not the states, controls interstate commerce, ending a New York steamboat monopoly."
+    },
+    {
+     "id": "g-p4-sectional-republic--war-of-1812",
+     "term": "War of 1812",
+     "section": "Political transformation",
+     "date": "1812–1815",
+     "def": "War with Britain over impressment, trade, and western land; it ended in a draw but boosted nationalism and industry."
+    },
+    {
+     "id": "g-p4-sectional-republic--impressment",
+     "term": "Impressment",
+     "section": "Political transformation",
+     "date": "Early 1800s",
+     "def": "British navy seizing American sailors for service, a leading cause of the War of 1812."
+    },
+    {
+     "id": "g-p4-sectional-republic--non-intercourse-act",
+     "term": "Non-Intercourse Act",
+     "section": "Political transformation",
+     "date": "1809",
+     "def": "Replaced the embargo, reopening trade with every nation except Britain and France."
+    },
+    {
+     "id": "g-p4-sectional-republic--battle-of-tippecanoe",
+     "term": "Battle of Tippecanoe",
+     "section": "Political transformation",
+     "date": "1811",
+     "def": "U.S. troops under William Henry Harrison destroyed Prophetstown, weakening Tecumseh's alliance."
+    },
+    {
+     "id": "g-p4-sectional-republic--tecumseh-s-alliance",
+     "term": "Tecumseh's alliance",
+     "section": "Political transformation",
+     "date": "1805–1813",
+     "def": "Shawnee leader Tecumseh and his brother united Native nations against U.S. expansion; he died fighting for Britain in 1813."
+    },
+    {
+     "id": "g-p4-sectional-republic--era-of-good-feelings",
+     "term": "Era of Good Feelings",
+     "section": "Political transformation",
+     "date": "1815–1825",
+     "def": "Period of one-party rule under Monroe after the Federalist Party collapsed."
+    },
+    {
+     "id": "g-p4-sectional-republic--james-monroe",
+     "term": "James Monroe",
+     "section": "Political transformation",
+     "date": "President 1817–1825",
+     "def": "President during the Era of Good Feelings who issued the Monroe Doctrine in 1823."
+    },
+    {
+     "id": "g-p4-sectional-republic--panic-of-1819",
+     "term": "Panic of 1819",
+     "section": "Political transformation",
+     "date": "1819",
+     "def": "First major U.S. financial crisis, set off by land speculation and a sudden tightening of bank credit."
+    },
+    {
+     "id": "g-p4-sectional-republic--the-corrupt-bargain",
+     "term": "The Corrupt Bargain",
+     "section": "Political transformation",
+     "date": "1824–1825",
+     "def": "Jackson's charge that Henry Clay made John Quincy Adams president in return for becoming secretary of state."
+    },
+    {
+     "id": "g-p4-sectional-republic--henry-clay-s-american-system",
+     "term": "Henry Clay's American System",
+     "section": "Political transformation",
+     "date": "1815 onward",
+     "def": "Plan for a national bank, protective tariffs, and roads and canals to tie the nation's economy together."
+    },
+    {
+     "id": "g-p4-sectional-republic--tariff-of-abominations",
+     "term": "Tariff of Abominations",
+     "section": "Political transformation",
+     "date": "1828",
+     "def": "High protective tariff that angered the South and led to the Nullification Crisis."
+    },
+    {
+     "id": "g-p4-sectional-republic--andrew-jackson-s-rise",
+     "term": "Andrew Jackson's rise",
+     "section": "Political transformation",
+     "date": "1815–1828",
+     "def": "Victory at New Orleans and fights against Native nations made Jackson a popular hero of ordinary white men."
+    },
+    {
+     "id": "g-p4-sectional-republic--expanded-white-male-suffrage",
+     "term": "Expanded white male suffrage",
+     "section": "Political transformation",
+     "date": "1820s",
+     "def": "States dropped property requirements so most white men could vote, while barring women and most Black men."
+    },
+    {
+     "id": "g-p4-sectional-republic--anti-elitism-and-the-national-bank",
+     "term": "Anti-elitism and the National Bank",
+     "section": "Political transformation",
+     "date": "1832–1836",
+     "def": "Jackson vetoed the Second Bank's recharter, attacking it as a tool of wealthy elites."
+    },
+    {
+     "id": "g-p4-sectional-republic--spoils-system",
+     "term": "Spoils system",
+     "section": "Political transformation",
+     "date": "1829 onward",
+     "def": "Rewarding political supporters with government jobs."
+    },
+    {
+     "id": "g-p4-sectional-republic--nullification-crisis",
+     "term": "Nullification Crisis",
+     "section": "Political transformation",
+     "date": "1832–1833",
+     "def": "South Carolina declared federal tariffs void; Jackson threatened force before a compromise tariff passed."
+    },
+    {
+     "id": "g-p4-sectional-republic--second-party-system",
+     "term": "Second Party System",
+     "section": "Political transformation",
+     "date": "1830s–1850s",
+     "def": "Rivalry between Jackson's Democrats and the Whigs."
+    },
+    {
+     "id": "g-p4-sectional-republic--assimilation-civilization-policy",
+     "term": "Assimilation (“Civilization Policy”)",
+     "section": "Political transformation",
+     "date": "1790s–1820s",
+     "def": "Federal push for Native people to adopt farming, Christianity, and private property."
+    },
+    {
+     "id": "g-p4-sectional-republic--native-debt-and-land-sales",
+     "term": "Native debt and land sales",
+     "section": "Political transformation",
+     "date": "Early 1800s",
+     "def": "Jefferson encouraged trading-post debts so Native nations would sell land to pay them off."
+    },
+    {
+     "id": "g-p4-sectional-republic--indian-removal-act",
+     "term": "Indian Removal Act",
+     "section": "Political transformation",
+     "date": "1830",
+     "def": "Authorized Jackson to move Native nations from the Southeast to land west of the Mississippi."
+    },
+    {
+     "id": "g-p4-sectional-republic--cherokee-legal-resistance",
+     "term": "Cherokee legal resistance",
+     "section": "Political transformation",
+     "date": "1820s–1830s",
+     "def": "The Cherokee used a written constitution, petitions, and courts; Worcester v. Georgia (1832) upheld their sovereignty."
+    },
+    {
+     "id": "g-p4-sectional-republic--trail-of-tears",
+     "term": "Trail of Tears",
+     "section": "Political transformation",
+     "date": "1838–1839",
+     "def": "Forced removal of the Cherokee to Indian Territory, during which thousands died."
+    },
+    {
+     "id": "g-p4-sectional-republic--national-road",
+     "term": "National Road",
+     "section": "Market Revolution",
+     "date": "Begun 1811",
+     "def": "First federally funded highway, running west from Maryland toward Illinois."
+    },
+    {
+     "id": "g-p4-sectional-republic--turnpikes",
+     "term": "Turnpikes",
+     "section": "Market Revolution",
+     "date": "1790s–1830s",
+     "def": "Private toll roads that made overland travel faster and cheaper."
+    },
+    {
+     "id": "g-p4-sectional-republic--robert-fulton-s-steamboat",
+     "term": "Robert Fulton's steamboat",
+     "section": "Market Revolution",
+     "date": "1807",
+     "def": "The Clermont proved steamboats practical, making upriver travel cheap and fast."
+    },
+    {
+     "id": "g-p4-sectional-republic--erie-canal",
+     "term": "Erie Canal",
+     "section": "Market Revolution",
+     "date": "1817–1825",
+     "def": "Linked the Great Lakes to New York City through the Hudson River, slashing shipping costs."
+    },
+    {
+     "id": "g-p4-sectional-republic--early-railroads",
+     "term": "Early railroads",
+     "section": "Market Revolution",
+     "date": "1830s onward",
+     "def": "Steam railroads spread quickly and moved goods year-round, linking farms to cities."
+    },
+    {
+     "id": "g-p4-sectional-republic--tariffs",
+     "term": "Tariffs",
+     "section": "Market Revolution",
+     "date": "1816 onward",
+     "def": "Taxes on imported goods that protected young American industries from British competition."
+    },
+    {
+     "id": "g-p4-sectional-republic--steam-powered-printing",
+     "term": "Steam-powered printing",
+     "section": "Market Revolution",
+     "date": "1830s",
+     "def": "Faster presses made cheap “penny” newspapers that spread news and politics widely."
+    },
+    {
+     "id": "g-p4-sectional-republic--telegraph",
+     "term": "Telegraph",
+     "section": "Market Revolution",
+     "date": "1844",
+     "def": "Samuel Morse's invention sent messages instantly by wire, changing business and news."
+    },
+    {
+     "id": "g-p4-sectional-republic--lowell-mills",
+     "term": "Lowell Mills",
+     "section": "Market Revolution",
+     "date": "1820s",
+     "def": "Massachusetts textile factories that employed young farm women living in company boardinghouses."
+    },
+    {
+     "id": "g-p4-sectional-republic--factory-system",
+     "term": "Factory system",
+     "section": "Market Revolution",
+     "date": "Early 1800s",
+     "def": "Production moved from homes and workshops into factories with machines and wage workers."
+    },
+    {
+     "id": "g-p4-sectional-republic--interchangeable-parts",
+     "term": "Interchangeable parts",
+     "section": "Market Revolution",
+     "date": "Early 1800s",
+     "def": "Identical, swappable parts, first used for guns, that made mass production possible."
+    },
+    {
+     "id": "g-p4-sectional-republic--machine-tools",
+     "term": "Machine tools",
+     "section": "Market Revolution",
+     "date": "Early 1800s",
+     "def": "Machines that cut precise metal parts for other machines, a foundation of manufacturing."
+    },
+    {
+     "id": "g-p4-sectional-republic--wage-labor",
+     "term": "Wage labor",
+     "section": "Market Revolution",
+     "date": "1820s onward",
+     "def": "Working for hourly or daily pay instead of owning one's own farm or shop."
+    },
+    {
+     "id": "g-p4-sectional-republic--mccormick-reaper",
+     "term": "McCormick reaper",
+     "section": "Market Revolution",
+     "date": "Patented 1834",
+     "def": "Horse-drawn harvester that let farmers grow far more grain for distant markets."
+    },
+    {
+     "id": "g-p4-sectional-republic--separate-spheres",
+     "term": "Separate spheres",
+     "section": "Market Revolution",
+     "date": "1820s onward",
+     "def": "Ideology placing middle-class men in paid public work and women at home as moral guardians."
+    },
+    {
+     "id": "g-p4-sectional-republic--education-and-literacy-rates",
+     "term": "Education and literacy rates",
+     "section": "Market Revolution",
+     "date": "1820s–1840s",
+     "def": "Common schools raised literacy rates, especially in the North."
+    },
+    {
+     "id": "g-p4-sectional-republic--falling-birth-rates",
+     "term": "Falling birth rates",
+     "section": "Market Revolution",
+     "date": "1800–1850",
+     "def": "Middle-class families had fewer children as work moved out of the home."
+    },
+    {
+     "id": "g-p4-sectional-republic--romantic-childhood",
+     "term": "“Romantic childhood”",
+     "section": "Market Revolution",
+     "date": "1800s",
+     "def": "New view of childhood as an innocent stage needing nurture and schooling rather than work."
+    },
+    {
+     "id": "g-p4-sectional-republic--coverture",
+     "term": "Coverture",
+     "section": "Market Revolution",
+     "date": "Colonial era–1800s",
+     "def": "Legal rule that a married woman's property and legal identity belonged to her husband."
+    },
+    {
+     "id": "g-p4-sectional-republic--first-great-immigration-wave",
+     "term": "First great immigration wave",
+     "section": "Market Revolution",
+     "date": "1830s–1850s",
+     "def": "Millions of Germans, Scandinavians, and Irish Catholics arrived, many fleeing hunger and hardship."
+    },
+    {
+     "id": "g-p4-sectional-republic--cotton-gin",
+     "term": "Cotton gin",
+     "section": "Cotton Revolution",
+     "date": "1793",
+     "def": "Eli Whitney's machine that cleaned seeds from cotton quickly, making cotton highly profitable."
+    },
+    {
+     "id": "g-p4-sectional-republic--petit-gulf-cotton",
+     "term": "Petit Gulf cotton",
+     "section": "Cotton Revolution",
+     "date": "1820s",
+     "def": "Mexican-bred cotton that was easier to pick, raising how much an enslaved person was forced to harvest."
+    },
+    {
+     "id": "g-p4-sectional-republic--short-staple-cotton",
+     "term": "Short-staple cotton",
+     "section": "Cotton Revolution",
+     "date": "1790s onward",
+     "def": "Hardy cotton that grew across the inland South once the gin could clean it."
+    },
+    {
+     "id": "g-p4-sectional-republic--the-cotton-belt-black-belt",
+     "term": "The Cotton Belt (Black Belt)",
+     "section": "Cotton Revolution",
+     "date": "1820s–1850s",
+     "def": "Deep South region of rich soil and cotton plantations, fed by enslaved people sold from the Upper South."
+    },
+    {
+     "id": "g-p4-sectional-republic--cotton-kingdom",
+     "term": "“Cotton Kingdom”",
+     "section": "Cotton Revolution",
+     "date": "1830s–1850s",
+     "def": "The slave South, whose economy, politics, and culture centered on cotton."
+    },
+    {
+     "id": "g-p4-sectional-republic--second-middle-passage",
+     "term": "Second Middle Passage",
+     "section": "Cotton Revolution",
+     "date": "1808–1860",
+     "def": "Forced movement of about a million enslaved people from the Upper South to the Deep South."
+    },
+    {
+     "id": "g-p4-sectional-republic--stricter-slave-codes",
+     "term": "Stricter slave codes",
+     "section": "Cotton Revolution",
+     "date": "1820s–1830s",
+     "def": "Laws, tightened after Nat Turner's revolt, banning slave literacy, gatherings, and freedom purchases."
+    },
+    {
+     "id": "g-p4-sectional-republic--cotton-revolution-as-capitalism",
+     "term": "Cotton Revolution as capitalism",
+     "section": "Cotton Revolution",
+     "date": "1800s–1850s",
+     "def": "Cotton led U.S. exports and ran on credit, debt, and speculation in land and enslaved people."
+    },
+    {
+     "id": "g-p4-sectional-republic--everyday-resistance",
+     "term": "Everyday resistance",
+     "section": "Cotton Revolution",
+     "date": "1800s",
+     "def": "Enslaved people slowed work, broke tools, and feigned illness to push back against slavery."
+    },
+    {
+     "id": "g-p4-sectional-republic--enslaved-marriage",
+     "term": "Enslaved marriage",
+     "section": "Cotton Revolution",
+     "date": "1800s",
+     "def": "Enslaved couples married without legal protection, forming families that sales could tear apart."
+    },
+    {
+     "id": "g-p4-sectional-republic--running-away",
+     "term": "Running away",
+     "section": "Cotton Revolution",
+     "date": "1800s",
+     "def": "Escaping for days or for good was a common way enslaved people resisted."
+    },
+    {
+     "id": "g-p4-sectional-republic--slave-cultures",
+     "term": "Slave cultures",
+     "section": "Cotton Revolution",
+     "date": "1800s",
+     "def": "Music, Christianity, stories, and kin networks enslaved people built to keep dignity and community."
+    },
+    {
+     "id": "g-p4-sectional-republic--slave-rebellion",
+     "term": "Slave rebellion",
+     "section": "Cotton Revolution",
+     "date": "1800–1831",
+     "def": "Armed revolts such as Gabriel's (1800), Denmark Vesey's plot (1822), and Nat Turner's (1831)."
+    },
+    {
+     "id": "g-p4-sectional-republic--second-great-awakening",
+     "term": "Second Great Awakening",
+     "section": "Religion and reform",
+     "date": "1800s–1840s",
+     "def": "Evangelical revivals teaching that anyone could be saved, which inspired reform movements."
+    },
+    {
+     "id": "g-p4-sectional-republic--burned-over-district",
+     "term": "“Burned-Over District”",
+     "section": "Religion and reform",
+     "date": "1820s–1840s",
+     "def": "Western New York along the Erie Canal, swept by repeated revivals and reform movements."
+    },
+    {
+     "id": "g-p4-sectional-republic--revivalism",
+     "term": "Revivalism",
+     "section": "Religion and reform",
+     "date": "1820s–1830s",
+     "def": "Emotional preaching and camp meetings, such as Charles Finney's, aimed at conversion."
+    },
+    {
+     "id": "g-p4-sectional-republic--temperance",
+     "term": "Temperance",
+     "section": "Religion and reform",
+     "date": "1820s–1850s",
+     "def": "Movement, largely led by women, to reduce or ban alcohol."
+    },
+    {
+     "id": "g-p4-sectional-republic--public-education",
+     "term": "Public education",
+     "section": "Religion and reform",
+     "date": "1830s–1840s",
+     "def": "Horace Mann's common school movement for free, tax-supported schools."
+    },
+    {
+     "id": "g-p4-sectional-republic--seneca-falls-convention",
+     "term": "Seneca Falls Convention",
+     "section": "Religion and reform",
+     "date": "1848",
+     "def": "Women's rights meeting whose Declaration of Sentiments demanded equality, including the vote."
+    },
+    {
+     "id": "g-p4-sectional-republic--american-colonization-society",
+     "term": "American Colonization Society",
+     "section": "Religion and reform",
+     "date": "1816",
+     "def": "Group that sought to send free Black Americans to Africa and founded Liberia."
+    },
+    {
+     "id": "g-p4-sectional-republic--william-lloyd-garrison",
+     "term": "William Lloyd Garrison",
+     "section": "Religion and reform",
+     "date": "The Liberator, 1831",
+     "def": "Abolitionist whose newspaper demanded immediate emancipation."
+    },
+    {
+     "id": "g-p4-sectional-republic--black-abolitionists",
+     "term": "Black abolitionists",
+     "section": "Religion and reform",
+     "date": "1830s–1860s",
+     "def": "Activists such as Frederick Douglass who exposed slavery through their own experience."
+    },
+    {
+     "id": "g-p4-sectional-republic--nat-turner-s-rebellion",
+     "term": "Nat Turner's Rebellion",
+     "section": "Religion and reform",
+     "date": "1831",
+     "def": "Virginia slave revolt that killed about 60 white people and led to harsher slave codes."
+    },
+    {
+     "id": "g-p4-sectional-republic--anti-abolitionist-violence",
+     "term": "Anti-abolitionist violence",
+     "section": "Religion and reform",
+     "date": "1830s",
+     "def": "Mobs attacked abolitionists, killing the editor Elijah Lovejoy in 1837."
+    }
+   ],
+   "questions": [
+    {
+     "id": "q-explain-jeffersons-vision-for-an-agrarian-republ",
+     "section": "Political transformation",
+     "text": "Explain Jefferson’s vision for an agrarian republic. Why did he feel yeoman farmers made the best citizens, and which policies did he pursue to make this vision a reality?"
+    },
+    {
+     "id": "q-how-did-the-federalist-party-use-the-courts-to-s",
+     "section": "Political transformation",
+     "text": "How did the Federalist Party use the courts to strengthen federal power?"
+    },
+    {
+     "id": "q-what-was-the-war-of-1812-an-expansionist-conflic",
+     "section": "Political transformation",
+     "text": "What was the War of 1812: an expansionist conflict? A Second War for Independence? An industrial kickstarter?"
+    },
+    {
+     "id": "q-the-era-of-good-feelings-was-short-lived-what-wa",
+     "section": "Political transformation",
+     "text": "The Era of Good Feelings was short lived! What was the appeal of Andrew Jackson, and why did the supporters of John Quincy Adams revile him?"
+    },
+    {
+     "id": "q-what-democratic-values-and-policies-define-the-e",
+     "section": "Political transformation",
+     "text": "What ‘democratic’ values and policies define the era of “Jacksonian Democracy”?"
+    },
+    {
+     "id": "q-evaluate-the-extent-to-which-federal-policy-towa",
+     "section": "Political transformation",
+     "text": "Evaluate the extent to which federal policy toward Native Americans changed from the 1790s to the 1840s."
+    },
+    {
+     "id": "q-the-transportation-revolution-why-is-cheap-and-r",
+     "section": "Market Revolution",
+     "text": "The Transportation Revolution: Why is cheap and reliable transportation a necessary precondition for industrialization? Which transportation networks unlocked the American domestic marketplace?"
+    },
+    {
+     "id": "q-the-communications-revolution-how-do-new-communi",
+     "section": "Market Revolution",
+     "text": "The Communications Revolution: How do new communication networks transform business and politics?"
+    },
+    {
+     "id": "q-the-manufacturing-revolution-why-were-textiles-a",
+     "section": "Market Revolution",
+     "text": "The Manufacturing Revolution: Why were textiles and guns important “entry” industries that helped to spur widespread manufacturing?"
+    },
+    {
+     "id": "q-how-did-these-economic-changes-upend-domestic-fa",
+     "section": "Market Revolution",
+     "text": "How did these economic changes upend domestic (family) life for middle class Americans, especially women? How did this experience differ from lower classes that relied on unskilled wage labor for their livelihood?"
+    },
+    {
+     "id": "q-explain-the-rise-of-the-cotton-economy-which-dev",
+     "section": "Cotton Revolution",
+     "text": "Explain the rise of the cotton economy. Which developments unlocked this astronomical growth in the early 1800s?"
+    },
+    {
+     "id": "q-but-then-cotton-came-and-grew-and-changed-everyt",
+     "section": "Cotton Revolution",
+     "text": "“But then cotton came, and grew, and changed everything.” How did the growth of the cotton economy transform the nature of American slavery for enslaved people?"
+    },
+    {
+     "id": "q-the-cotton-revolution-was-a-time-of-capitalism-p",
+     "section": "Cotton Revolution",
+     "text": "“The Cotton Revolution was a time of capitalism, panic, stress, and competition.” If cotton was so profitable, why did so many cotton growers feel economically insecure? And what impact did this insecurity have on enslaved people?"
+    },
+    {
+     "id": "q-slavery-existed-to-dominate-yet-enslaved-people-",
+     "section": "Cotton Revolution",
+     "text": "“Slavery existed to dominate, yet enslaved people formed bonds, maintained traditions, and crafted new culture.” Explain ways in which enslaved people resisted dehumanization in order to gain independence."
+    },
+    {
+     "id": "q-religion-and-reform-movements-while-people-exper",
+     "section": "Religion and reform",
+     "text": "Religion and Reform Movements: While people experience increased religiosity for many reasons, historians can also trace a pattern between economic changes and the Second Great Awakening. How might economic disruptions have informed the search for revival, morality, and social order? And why did these movements particularly attract women?"
+    },
+    {
+     "id": "q-womens-rights-and-abolitionism-how-did-new-commu",
+     "section": "Religion and reform",
+     "text": "Women’s Rights and Abolitionism: How did new communication technology allow for the abolitionists to gain national attention? Which two 1831 events organized the abolitionist movement and convinced pro-slavery forces that abolitionism was a threat to their survival?"
+    }
+   ]
+  }
+ ]
+}
+</script>
+
+<script>
+(() => {
+"use strict";
+const DATA = JSON.parse(document.getElementById("study-data").textContent);
+const R = 66, W = 2*R, H = Math.sqrt(3)*R, OX = 2500, OY = 1800;
+const DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+const COLORS = [["red","Red","#d6544a"],["orange","Orange","#e48a2d"],["yellow","Yellow","#d4b021"],["green","Green","#4f9a45"],["blue","Blue","#3b7fc4"],["purple","Purple","#8a5cc8"]];
+const PROCS = {
+  cause:      {label:"Causation",            short:"Cause"},
+  similar:    {label:"Comparison: similar",  short:"Similar"},
+  different:  {label:"Comparison: different",short:"Different"},
+  continuity: {label:"Continuity",           short:"Continuity"},
+  change:     {label:"Change over time",     short:"Change"},
+  context:    {label:"Context",              short:"Context"}
+};
+const THEMES = [
+  {id:"nat", label:"American and National Identity", short:"Identity",        c:"#b23a48"},
+  {id:"wxt", label:"Work, Exchange, and Technology", short:"Work & Tech",     c:"#a35f0f"},
+  {id:"geo", label:"Geography and the Environment",  short:"Geography",       c:"#4a7a35"},
+  {id:"mig", label:"Migration and Settlement",       short:"Migration",       c:"#1f7a88"},
+  {id:"pce", label:"Politics and Power",             short:"Politics & Power",c:"#1f5aa3"},
+  {id:"wor", label:"America in the World",           short:"World",           c:"#6a4cb0"},
+  {id:"arc", label:"American and Regional Culture",  short:"Culture",         c:"#a8487a"},
+  {id:"soc", label:"Social Structures",              short:"Social",          c:"#6b5a44"}
+];
+const THEME = Object.fromEntries(THEMES.map(t=>[t.id,t]));
+const NO_THEME = "#4a5458";
+/* Normalize a stored link (also reads labels saved before this version). */
+function linkInfo(l){
+  if(!l) return null;
+  let proc = l.proc || null, from = l.from || null, theme = l.theme || null, why = l.why || "";
+  if(!l.proc && l.cat){
+    if(l.cat === "cause"){ proc = "cause"; from = l.cause || null; }
+    else if(l.cat === "contemp" || l.cat === "chron") proc = "context";
+    else if(l.cat === "pol") theme = "pce";
+    else if(l.cat === "econ" || l.cat === "tech") theme = "wxt";
+    if(l.note) why = l.note;
+  }
+  const th = THEME[theme];
+  return {proc, from, theme, why,
+    procLabel: proc ? PROCS[proc].label : "Connected",
+    short: proc ? PROCS[proc].short : (th ? th.short : "Linked"),
+    themeLabel: th ? th.label : "",
+    color: th ? th.c : NO_THEME};
+}
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+
+/* ---------- per-viewer storage (best effort) ---------- */
+const KEY = "hexboard:v1";
+function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
+const store = Object.assign({defs:true, customSets:[], boards:{}, active:null, helpHidden:false, section:{}}, load());
+if(!store.section) store.section = {};
+
+function allSets(){ return DATA.sets.concat(store.customSets || []); }
+function activeSet(){ const s = allSets(); return s.find(x=>x.id===store.active) || s[0]; }
+function currentSection(){ const s = activeSet(); const v = store.section[s.id]; return (s.sections||[]).includes(v) ? v : ""; }
+function inSection(t){ const sec = currentSection(); return !sec || t.section === sec; }
+function board(){ const id = activeSet().id; if(!store.boards[id]) store.boards[id] = {tiles:{}, links:{}}; return store.boards[id]; }
+
+/* ---------- hex math ---------- */
+const key = (q,r) => q+","+r;
+function toPx(q,r){ return {x: OX + R*1.5*q, y: OY + R*Math.sqrt(3)*(r + q/2)}; }
+function toHex(x,y){
+  x -= OX; y -= OY;
+  let q = (2/3*x)/R, r = (-1/3*x + Math.sqrt(3)/3*y)/R, s = -q-r;
+  let rq=Math.round(q), rr=Math.round(r), rs=Math.round(s);
+  const dq=Math.abs(rq-q), dr=Math.abs(rr-r), ds=Math.abs(rs-s);
+  if(dq>dr && dq>ds) rq=-rr-rs; else if(dr>ds) rr=-rq-rs;
+  return {q:rq, r:rr};
+}
+function* spiral(cq,cr,max=40){
+  yield {q:cq,r:cr};
+  for(let k=1;k<=max;k++){
+    let q=cq+DIRS[4][0]*k, r=cr+DIRS[4][1]*k;
+    for(let d=0; d<6; d++) for(let i=0;i<k;i++){ yield {q,r}; q+=DIRS[d][0]; r+=DIRS[d][1]; }
+  }
+}
+function occupancy(except){ const m = {}; for(const [id,t] of Object.entries(board().tiles)) if(id!==except) m[key(t.q,t.r)] = id; return m; }
+function nearestFree(q,r,except){ const occ = occupancy(except); for(const c of spiral(q,r)) if(!occ[key(c.q,c.r)]) return c; return {q,r}; }
+function nearestIsolated(q,r){
+  const occ = occupancy();
+  for(const c of spiral(q,r,60)){
+    if(occ[key(c.q,c.r)]) continue;
+    if(DIRS.every(([dq,dr]) => !occ[key(c.q+dq,c.r+dr)])) return c;
+  }
+  return nearestFree(q,r);
+}
+const pairKey = (a,b) => a<b ? a+"|"+b : b+"|"+a;
+function adjacentPairs(){
+  const occ = occupancy(), out = [], seen = new Set();
+  for(const [id,t] of Object.entries(board().tiles)){
+    for(const [dq,dr] of DIRS){
+      const other = occ[key(t.q+dq,t.r+dr)];
+      if(other){ const k = pairKey(id,other); if(!seen.has(k)){ seen.add(k); out.push([id,other]); } }
+    }
+  }
+  return out;
+}
+
+/* ---------- view transform ---------- */
+const vp = $("#viewport"), world = $("#world"), tilesEl = $("#tiles"), badgesEl = $("#badges");
+let view = {x:0, y:0, z:1};
+function applyView(){ world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`; }
+function centerOn(wx,wy){ const r = vp.getBoundingClientRect(); view.x = r.width/2 - wx*view.z; view.y = r.height/2 - wy*view.z; applyView(); }
+function screenToWorld(cx,cy){ const r = vp.getBoundingClientRect(); return {x:(cx - r.left - view.x)/view.z, y:(cy - r.top - view.y)/view.z}; }
+function worldToScreen(wx,wy){ const r = vp.getBoundingClientRect(); return {x:r.left + view.x + wx*view.z, y:r.top + view.y + wy*view.z}; }
+function zoomAt(f, cx, cy){
+  const r = vp.getBoundingClientRect(); cx ??= r.left + r.width/2; cy ??= r.top + r.height/2;
+  const w = screenToWorld(cx,cy); view.z = Math.min(1.8, Math.max(.35, view.z*f));
+  view.x = cx - r.left - w.x*view.z; view.y = cy - r.top - w.y*view.z; applyView();
+}
+function fitAll(){
+  const ts = Object.values(board().tiles);
+  if(!ts.length){ view.z = 1; centerOn(OX,OY); return; }
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const t of ts){ const p = toPx(t.q,t.r); x0=Math.min(x0,p.x-R); x1=Math.max(x1,p.x+R); y0=Math.min(y0,p.y-H/2); y1=Math.max(y1,p.y+H/2); }
+  const r = vp.getBoundingClientRect();
+  view.z = Math.min(1.25, Math.max(.35, Math.min((r.width-60)/(x1-x0), (r.height-60)/(y1-y0))));
+  centerOn((x0+x1)/2,(y0+y1)/2);
+}
+
+/* hex grid background, aligned to the tile grid */
+function gridBg(){
+  const pw = 3*R, ph = H, col = getComputedStyle(document.documentElement).getPropertyValue("--grid").trim() || "rgba(0,0,0,.1)";
+  const hex = (cx,cy) => { let d=""; for(let i=0;i<6;i++){ const a=Math.PI/3*i, x=cx+R*Math.cos(a), y=cy+R*Math.sin(a); d+=(i?"L":"M")+x.toFixed(2)+" "+y.toFixed(2); } return d+"Z"; };
+  const paths = [hex(0,0),hex(pw,0),hex(0,ph),hex(pw,ph),hex(1.5*R,ph/2)].join(" ");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}"><path d="${paths}" fill="none" stroke="${col}" stroke-width="1.2"/></svg>`;
+  world.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  world.style.backgroundSize = `${pw}px ${ph}px`;
+  world.style.backgroundPosition = `${OX % pw}px ${OY % ph}px`;
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", gridBg);
+new MutationObserver(gridBg).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+/* ---------- rendering ---------- */
+const termById = id => activeSet().terms.find(t=>t.id===id);
+function fitText(el, max, min){
+  let s = max; el.style.fontSize = s+"px";
+  const box = el.parentElement || el;
+  el.style.overflowWrap = "normal";
+  while(s > min && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1)){ s -= .5; el.style.fontSize = s+"px"; }
+  if(el.scrollWidth > el.clientWidth + 1) el.style.overflowWrap = "anywhere";
+}
+function tileEl(id){
+  const t = termById(id); if(!t) return null;
+  const el = document.createElement("div");
+  el.className = "hex"; el.dataset.id = id; el.tabIndex = 0;
+  el.style.setProperty("--w", W+"px"); el.style.setProperty("--h", H+"px");
+  el.setAttribute("role","button");
+  el.setAttribute("aria-label", t.term + (store.defs && t.def ? ". Press Enter to flip." : ""));
+  el.title = t.term + (t.date ? " (" + t.date + ")" : "");
+  el.innerHTML = `<div class="flip"><div class="face front"><div class="txt"></div></div>
+    <div class="face back"><div class="txt"><div class="date"></div><div class="def"></div></div></div></div>`;
+  el.querySelector(".front .txt").textContent = t.term;
+  el.querySelector(".date").textContent = t.date || "";
+  el.querySelector(".def").textContent = t.def || "No definition yet.";
+  return el;
+}
+function placeEl(el, t){
+  const p = toPx(t.q,t.r);
+  el.style.left = (p.x - W/2) + "px"; el.style.top = (p.y - H/2) + "px";
+  el.dataset.color = t.color || ""; el.classList.toggle("flipped", !!(t.flipped && store.defs));
+}
+function renderTiles(){
+  tilesEl.textContent = "";
+  for(const [id,t] of Object.entries(board().tiles)){
+    const el = tileEl(id); if(!el){ delete board().tiles[id]; continue; }
+    placeEl(el,t); tilesEl.appendChild(el);
+    fitText(el.querySelector(".front .txt"), 16, 9.5);
+    const back = el.querySelector(".back .txt"), def = back.querySelector(".def");
+    let s = 10.5; def.style.fontSize = s+"px";
+    while(s > 7.5 && back.scrollHeight > back.clientHeight + 1){ s -= .5; def.style.fontSize = s+"px"; }
+  }
+  renderBadges(); renderTray();
+}
+function arrowSvg(fromId,toId){
+  const a = board().tiles[fromId], b = board().tiles[toId], pa = toPx(a.q,a.r), pb = toPx(b.q,b.r);
+  const ang = Math.atan2(pb.y-pa.y, pb.x-pa.x) * 180/Math.PI;
+  return `<svg width="11" height="11" viewBox="0 0 12 12" style="transform:rotate(${ang}deg)" aria-hidden="true"><path d="M1 6h8M6 2.5 9.5 6 6 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function badgeHtml(link, a, b){
+  const info = linkInfo(link);
+  let inner = esc(info.short);
+  if(info.proc === "cause" && info.from){ const eff = info.from===a ? b : a; inner += arrowSvg(info.from, eff); }
+  if(info.why) inner += `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="opacity:.85"><path d="M1 1.5h8v5H4.5L2 8.8V6.5H1z" fill="currentColor"/></svg>`;
+  return inner;
+}
+function renderBadges(){
+  badgesEl.textContent = "";
+  const b = board(); let labeled = 0;
+  for(const [a,c] of adjacentPairs()){
+    const ta = b.tiles[a], tc = b.tiles[c], pa = toPx(ta.q,ta.r), pc = toPx(tc.q,tc.r);
+    const btn = document.createElement("button");
+    const link = b.links[pairKey(a,c)];
+    btn.style.left = (pa.x+pc.x)/2 + "px"; btn.style.top = (pa.y+pc.y)/2 + "px";
+    const na = termById(a).term, nc = termById(c).term;
+    if(link){
+      labeled++;
+      const info = linkInfo(link);
+      btn.className = "badge"; btn.style.setProperty("--bc", info.color);
+      btn.innerHTML = badgeHtml(link,a,c);
+      btn.title = `${na} and ${nc}: ${info.procLabel}${info.themeLabel ? ", " + info.themeLabel : ""}${info.why ? ". Because " + info.why : ""}. Click to change.`;
+      btn.setAttribute("aria-label", btn.title);
+    } else {
+      btn.className = "badge unset"; btn.textContent = "+";
+      btn.title = `Label how ${na} and ${nc} connect`; btn.setAttribute("aria-label", btn.title);
+    }
+    btn.addEventListener("pointerdown", e => e.stopPropagation());
+    btn.addEventListener("click", e => { e.stopPropagation(); openRelation([a,c]); });
+    badgesEl.appendChild(btn);
+  }
+  $("#connCount").textContent = labeled;
+}
+function renderTray(){
+  const set = activeSet(), placed = board().tiles, list = $("#trayList");
+  const left = set.terms.filter(t => !placed[t.id] && inSection(t));
+  const secSel = $("#secSel"), secs = set.sections || [];
+  secSel.hidden = !secs.length;
+  if(secs.length){
+    secSel.textContent = "";
+    const all = document.createElement("option"); all.value = ""; all.textContent = `All sections (${set.terms.length})`; secSel.appendChild(all);
+    for(const sc of secs){ const o = document.createElement("option"); o.value = sc; o.textContent = `${sc} (${set.terms.filter(t=>t.section===sc).length})`; secSel.appendChild(o); }
+    secSel.value = currentSection();
+  }
+  $("#trayCount").textContent = left.length;
+  $("#dealBtn").disabled = !left.length;
+  list.textContent = "";
+  if(!left.length){ const p = document.createElement("p"); p.className="tray-empty"; p.textContent = currentSection() ? "Every term in this section is on the table. Pick another section above, or click a hexagon and choose Back to tray." : "Every term is on the table. Click a hexagon and choose Back to tray to remove it."; list.appendChild(p); return; }
+  for(const t of left){
+    const b = document.createElement("button"); b.className = "chip"; b.dataset.id = t.id;
+    b.innerHTML = `<svg width="14" height="12" viewBox="0 0 44 38" aria-hidden="true"><path d="M11 2h22l10 17-10 17H11L1 19z" fill="none" stroke="currentColor" stroke-width="4"/></svg><span></span>`;
+    b.querySelector("span").textContent = t.term;
+    b.title = "Drag onto the table, or click to place it";
+    list.appendChild(b);
+  }
+}
+function renderSetSelect(){
+  const sel = $("#setSel"); sel.textContent = "";
+  const groups = [["Study guides", DATA.sets], ["My lists", store.customSets || []]];
+  for(const [label, list] of groups){
+    if(!list.length) continue;
+    const g = document.createElement("optgroup"); g.label = label;
+    for(const s of list){ const o = document.createElement("option"); o.value = s.id; o.textContent = s.name; g.appendChild(o); }
+    sel.appendChild(g);
+  }
+  sel.value = activeSet().id;
+  const s = activeSet();
+  const upd = new Date(DATA.updated + "T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+  $("#setNote").textContent = s.custom ? `Your own list · ${s.terms.length} terms, saved in this browser` : `Mr. Greiner's study guide · ${s.terms.length} terms · updated ${upd}`;
+}
+function renderAll(){ renderSetSelect(); renderTiles(); syncUndo(); if(store.view === "timeline" && typeof renderTimeline === "function") renderTimeline(); if(store.view === "bank" && typeof renderBank === "function") renderBank(); }
+
+/* ---------- placing & moving ---------- */
+/* ---------- undo ---------- */
+const undoStacks = {};
+function snapshot(label){
+  const id = activeSet().id, st = (undoStacks[id] ||= []);
+  st.push({label, state: JSON.stringify(board())});
+  if(st.length > 60) st.shift();
+  syncUndo();
+}
+function syncUndo(){
+  const st = undoStacks[activeSet().id] || [], btn = $("#undoBtn");
+  btn.disabled = !st.length;
+  btn.title = st.length ? `Undo ${st[st.length-1].label} (Ctrl+Z or ⌘Z)` : "Nothing to undo";
+}
+function undo(){
+  const st = undoStacks[activeSet().id] || [];
+  const last = st.pop(); if(!last) return;
+  store.boards[activeSet().id] = JSON.parse(last.state); save();
+  closePops(); relQueue = []; renderTiles(); syncUndo();
+  toast(`Undid ${last.label}.`);
+}
+$("#undoBtn").addEventListener("click", undo);
+document.addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z"){
+    if(e.target.closest("input, textarea") || !$("#intro").hidden) return;
+    e.preventDefault(); undo();
+  }
+});
+
+function placeTerm(id, q, r, opts={}){
+  snapshot("placing a term");
+  const b = board();
+  const c = opts.isolated ? nearestIsolated(q,r) : nearestFree(q,r,id);
+  const prev = b.tiles[id] || {};
+  b.tiles[id] = {q:c.q, r:c.r, color:prev.color||"", flipped:false};
+  save(); renderTiles();
+  if(!opts.isolated) promptNewPairs(id);
+}
+function promptNewPairs(id){
+  const b = board(), t = b.tiles[id], occ = occupancy(id), q = [];
+  for(const [dq,dr] of DIRS){ const o = occ[key(t.q+dq,t.r+dr)]; if(o && !b.links[pairKey(id,o)]) q.push([id,o]); }
+  pendingExtra = Math.max(0, q.length - 1); relQueue = q.slice(0, 1); relPos = {i:0, n:1}; nextRelation();
+}
+function viewCenterCell(){ const r = vp.getBoundingClientRect(); const w = screenToWorld(r.left+r.width/2, r.top+r.height/2); return toHex(w.x,w.y); }
+$("#dealBtn").addEventListener("click", () => {
+  snapshot("dealing terms");
+  const set = activeSet(), b = board();
+  const any = Object.keys(b.tiles).length;
+  const c = any ? viewCenterCell() : {q:0,r:0};
+  for(const t of set.terms) if(!b.tiles[t.id] && inSection(t)){ const cell = nearestIsolated(c.q,c.r); b.tiles[t.id] = {q:cell.q, r:cell.r, color:"", flipped:false}; }
+  save(); renderTiles(); fitAll();
+});
+
+/* ---------- pointer: tiles ---------- */
+let drag = null, lastTap = {id:null,t:0}, pressTimer = null;
+tilesEl.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".hex"); if(!el) return;
+  if(e.button === 2) return;
+  e.stopPropagation(); closePops();
+  const id = el.dataset.id, w = screenToWorld(e.clientX,e.clientY), p = toPx(board().tiles[id].q, board().tiles[id].r);
+  drag = {id, el, sx:e.clientX, sy:e.clientY, dx:w.x-p.x, dy:w.y-p.y, moved:false, pid:e.pointerId};
+  el.setPointerCapture(e.pointerId);
+  clearTimeout(pressTimer);
+  if(e.pointerType !== "mouse") pressTimer = setTimeout(() => { if(drag && !drag.moved){ const d = drag; drag = null; openCtx(d.id, d.sx, d.sy); } }, 520);
+});
+tilesEl.addEventListener("pointermove", e => {
+  if(!drag || e.pointerId !== drag.pid) return;
+  if(!drag.moved && Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) < 5) return;
+  if(!drag.moved){ drag.moved = true; clearTimeout(pressTimer); drag.el.classList.add("dragging"); }
+  const w = screenToWorld(e.clientX,e.clientY);
+  drag.el.style.left = (w.x - drag.dx - W/2) + "px"; drag.el.style.top = (w.y - drag.dy - H/2) + "px";
+});
+function endTileDrag(e){
+  clearTimeout(pressTimer);
+  if(!drag || e.pointerId !== drag.pid) return;
+  const d = drag; drag = null;
+  if(d.moved){
+    d.el.classList.remove("dragging");
+    const w = screenToWorld(e.clientX,e.clientY);
+    const c = toHex(w.x - d.dx, w.y - d.dy);
+    const b = board(), t = b.tiles[d.id], free = nearestFree(c.q,c.r,d.id);
+    if(free.q !== t.q || free.r !== t.r){ snapshot("moving a hexagon"); t.q = free.q; t.r = free.r; save(); }
+    renderTiles();
+    tilesEl.querySelector(`.hex[data-id="${d.id}"]`)?.focus({preventScroll:true});
+    promptNewPairs(d.id);
+  } else if(e.type === "pointerup"){
+    const now = Date.now();
+    if(lastTap.id === d.id && now - lastTap.t < 340){ lastTap = {id:null,t:0}; clearTimeout(cardTimer); closePops(); flipTile(d.id); }
+    else {
+      lastTap = {id:d.id, t:now};
+      const t = board().tiles[d.id];
+      if(t && t.flipped && store.defs){ const id = d.id; clearTimeout(cardTimer); cardTimer = setTimeout(() => openCard(id), 320); }
+      else { const r = d.el.getBoundingClientRect(); openCtx(d.id, r.left + r.width/2, r.top, true); }
+    }
+  }
+}
+tilesEl.addEventListener("pointerup", endTileDrag);
+tilesEl.addEventListener("pointercancel", endTileDrag);
+tilesEl.addEventListener("contextmenu", e => { const el = e.target.closest(".hex"); if(!el) return; e.preventDefault(); if(!drag) openCtx(el.dataset.id, e.clientX, e.clientY); });
+tilesEl.addEventListener("keydown", e => {
+  const el = e.target.closest(".hex"); if(!el) return;
+  if(e.key === "Enter" || e.key === " "){ e.preventDefault(); flipTile(el.dataset.id); }
+  if(e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")){ e.preventDefault(); const r = el.getBoundingClientRect(); openCtx(el.dataset.id, r.left + r.width/2, r.top + r.height/2); }
+});
+function flipTile(id){
+  if(!store.defs){ toast("Definitions are off. Turn them on in the toolbar to flip hexagons."); return; }
+  const t = board().tiles[id]; t.flipped = !t.flipped; save();
+  tilesEl.querySelector(`.hex[data-id="${id}"]`)?.classList.toggle("flipped", t.flipped);
+}
+
+/* ---------- pointer: panning & zoom ---------- */
+let pan = null;
+vp.addEventListener("pointerdown", e => {
+  if(e.target.closest(".hex,.badge,.zoom,.help")) return;
+  closePops();
+  pan = {sx:e.clientX, sy:e.clientY, vx:view.x, vy:view.y, pid:e.pointerId};
+  vp.setPointerCapture(e.pointerId); vp.classList.add("panning");
+});
+vp.addEventListener("pointermove", e => { if(!pan || e.pointerId!==pan.pid) return; view.x = pan.vx + e.clientX - pan.sx; view.y = pan.vy + e.clientY - pan.sy; applyView(); });
+const endPan = () => { pan = null; vp.classList.remove("panning"); };
+vp.addEventListener("pointerup", endPan); vp.addEventListener("pointercancel", endPan);
+vp.addEventListener("wheel", e => {
+  e.preventDefault();
+  if(e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY*0.0025), e.clientX, e.clientY);
+  else { view.x -= e.deltaX; view.y -= e.deltaY; applyView(); }
+}, {passive:false});
+$("#zIn").onclick = () => zoomAt(1.2); $("#zOut").onclick = () => zoomAt(1/1.2); $("#zFit").onclick = fitAll;
+
+/* ---------- tray drag ---------- */
+let tdrag = null;
+$("#trayList").addEventListener("pointerdown", e => {
+  const chip = e.target.closest(".chip"); if(!chip) return;
+  tdrag = {id:chip.dataset.id, sx:e.clientX, sy:e.clientY, ghost:null, pid:e.pointerId, chip};
+  chip.setPointerCapture(e.pointerId);
+});
+$("#trayList").addEventListener("pointermove", e => {
+  if(!tdrag || e.pointerId!==tdrag.pid) return;
+  const dist = Math.hypot(e.clientX-tdrag.sx, e.clientY-tdrag.sy);
+  if(!tdrag.ghost){
+    if(dist < 6) return;
+    // On the phone strip, a mostly-horizontal swipe scrolls the strip instead.
+    const narrow = matchMedia("(max-width:760px)").matches;
+    if(narrow && Math.abs(e.clientX-tdrag.sx) > Math.abs(e.clientY-tdrag.sy)){ tdrag.chip.releasePointerCapture(e.pointerId); tdrag = null; return; }
+    const g = tileEl(tdrag.id); g.classList.add("ghost","dragging"); g.style.transform = `scale(${view.z})`; g.style.transformOrigin = "0 0";
+    document.body.appendChild(g); fitText(g.querySelector(".front .txt"),16,9.5); tdrag.ghost = g;
+  }
+  tdrag.ghost.style.left = (e.clientX - W*view.z/2) + "px"; tdrag.ghost.style.top = (e.clientY - H*view.z/2) + "px";
+});
+function endTray(e){
+  if(!tdrag || e.pointerId!==tdrag.pid) return;
+  const d = tdrag; tdrag = null;
+  if(d.ghost){
+    d.ghost.remove();
+    const r = vp.getBoundingClientRect();
+    if(e.type==="pointerup" && e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom){
+      const w = screenToWorld(e.clientX,e.clientY), c = toHex(w.x,w.y); placeTerm(d.id, c.q, c.r);
+    }
+  } else if(e.type==="pointerup"){
+    const c = Object.keys(board().tiles).length ? viewCenterCell() : {q:0,r:0};
+    placeTerm(d.id, c.q, c.r, {isolated:true});
+    const t = board().tiles[d.id], p = toPx(t.q,t.r), s = worldToScreen(p.x,p.y), vr = vp.getBoundingClientRect();
+    if(s.x<vr.left+40||s.x>vr.right-40||s.y<vr.top+40||s.y>vr.bottom-40) centerOn(p.x,p.y);
+  }
+}
+$("#trayList").addEventListener("pointerup", endTray);
+$("#trayList").addEventListener("pointercancel", endTray);
+
+/* ---------- popovers ---------- */
+let pop = null;
+function closePops(){ if(pop){ pop.remove(); pop = null; } document.querySelectorAll(".hex.pairing").forEach(e => e.classList.remove("pairing")); }
+function showPop(node, x, y, above){
+  closePops(); pop = node; document.body.appendChild(node);
+  const r = node.getBoundingClientRect(), pad = 12;
+  if(above){ x = x - r.width/2; y = y - r.height - 8; if(y < pad) y = y + r.height + 8 + 40; }
+  node.style.left = Math.max(pad, Math.min(x, innerWidth - r.width - pad)) + "px";
+  node.style.top = Math.max(pad, Math.min(y, innerHeight - r.height - pad)) + "px";
+}
+document.addEventListener("pointerdown", e => { if(pop && !pop.contains(e.target) && !e.target.closest(".badge")) { const wasRel = pop.classList.contains("rel"); closePops(); if(wasRel){ relQueue = []; } } }, true);
+document.addEventListener("keydown", e => { if(e.key === "Escape"){ closePops(); relQueue = []; closeDialog(); } });
+
+function openCtx(id, x, y, above){
+  const t = board().tiles[id], term = termById(id);
+  const m = document.createElement("div"); m.className = "pop ctx"; m.setAttribute("role","menu");
+  m.innerHTML = `<div class="sw" aria-label="Color">${COLORS.map(([k,n,hex])=>`<button data-c="${k}" title="${n}" aria-label="${n}" aria-pressed="${t.color===k}" style="background:${hex}"></button>`).join("")}
+    <button data-c="" class="none" title="No color" aria-label="No color" aria-pressed="${!t.color}"></button></div>
+    ${store.defs ? `<button class="item" data-a="card">Open large card</button>` : ""}
+    <button class="item" data-a="flip">${t.flipped && store.defs ? "Show term" : "Flip to definition"}</button>
+    <button class="item" data-a="tray">Back to tray</button>`;
+  m.addEventListener("click", e => {
+    const c = e.target.closest("[data-c]"), a = e.target.closest("[data-a]");
+    if(c){ if(t.color !== c.dataset.c) snapshot("a color change"); t.color = c.dataset.c; save(); const el = tilesEl.querySelector(`.hex[data-id="${id}"]`); if(el) el.dataset.color = t.color; closePops(); }
+    if(a){ closePops(); if(a.dataset.a==="flip") flipTile(id); else if(a.dataset.a==="card") openCard(id); else { snapshot("sending a term back to the tray"); delete board().tiles[id]; save(); renderTiles(); toast(`${term.term} is back in the tray.`); } }
+  });
+  if(above) showPop(m, x, y, true); else { showPop(m, x+4, y+4); m.querySelector("button")?.focus({preventScroll:true}); }
+}
+
+let relQueue = [];
+let relPos = {i:0, n:0}, pendingExtra = 0;
+function nextRelation(){ const p = relQueue.shift(); if(p){ relPos.i++; openRelation(p, relPos.n > 1 ? {...relPos} : null); } }
+function openRelation([a,b], qpos){
+  const bd = board(), k = pairKey(a,b), cur = linkInfo(bd.links[k]);
+  const ta = termById(a), tb = termById(b);
+  const pa = toPx(bd.tiles[a].q, bd.tiles[a].r), pb = toPx(bd.tiles[b].q, bd.tiles[b].r);
+  const s = worldToScreen((pa.x+pb.x)/2, (pa.y+pb.y)/2);
+  const draft = cur ? {proc:cur.proc, from:cur.from, theme:cur.theme, why:cur.why} : {};
+  let snapped = false;
+  const commit = () => {
+    if(!snapped){ snapshot(cur ? "changing a connection" : "a connection label"); snapped = true; }
+    const v = {}; if(draft.proc) v.proc = draft.proc; if(draft.from) v.from = draft.from; if(draft.theme && THEME[draft.theme]) v.theme = draft.theme; if(draft.why) v.why = draft.why;
+    board().links[k] = v; save(); renderBadges();
+  };
+  const finish = (saved) => {
+    closePops();
+    try { renderBadges(); if(store.view === "timeline") renderTimeline(); } catch(err){ console.error(err); }
+    const extra = pendingExtra; pendingExtra = 0;
+    const more = extra ? ` It also touches ${extra} other hexagon${extra === 1 ? "" : "s"}; click the + on a seam to label ${extra === 1 ? "it" : "them"}.` : "";
+    if(saved || more) toast((saved ? "Connection saved." : "") + more);
+    nextRelation();
+  };
+  const hdr = n => `<button class="xclose" data-x="close" aria-label="Close">×</button>${qpos ? `<div class="qcount"><span>Connection ${qpos.i} of ${qpos.n} for this hexagon</span><button class="link" data-x="skipall">Skip the rest</button></div>` : ""}<div class="steps">${[1,2,3].map(i => (i===n ? `<b>${i}</b>` : `<span>${i}</span>`) + " " + ["How","Area","Why"][i-1]).join(" ")}</div>`;
+  const m = document.createElement("div"); m.className = "pop rel"; m.setAttribute("role","dialog"); m.setAttribute("aria-label","Label this connection");
+  const pressed = (cond) => `aria-pressed="${!!cond}"`;
+  const fit = () => { if(!m.isConnected) return; const r = m.getBoundingClientRect(), pad = 12;
+    if(r.bottom > innerHeight - pad) m.style.top = Math.max(pad, innerHeight - r.height - pad) + "px";
+    if(r.right > innerWidth - pad) m.style.left = Math.max(pad, innerWidth - r.width - pad) + "px"; };
+  const step1 = () => {
+    const A = esc(ta.term), B = esc(tb.term);
+    m.innerHTML = `${hdr(1)}
+      <h3>How are these connected?</h3>
+      <div class="pair">${A} <span>and</span> ${B}</div>
+      <div class="grp">Causation</div>
+      <div class="cats one">
+        <button class="cat" data-proc="cause" data-from="${a}" ${pressed(draft.proc==="cause" && draft.from===a)}>${A} → ${B}</button>
+        <button class="cat" data-proc="cause" data-from="${b}" ${pressed(draft.proc==="cause" && draft.from===b)}>${B} → ${A}</button>
+      </div>
+      <div class="grp">Comparison</div>
+      <div class="cats"><button class="cat" data-proc="similar" ${pressed(draft.proc==="similar")}>Similar</button><button class="cat" data-proc="different" ${pressed(draft.proc==="different")}>Different</button></div>
+      <div class="grp">Continuity and change over time</div>
+      <div class="cats"><button class="cat" data-proc="continuity" ${pressed(draft.proc==="continuity")}>Continuity</button><button class="cat" data-proc="change" ${pressed(draft.proc==="change")}>Change</button></div>
+      <div class="grp">Context</div>
+      <div class="cats one"><button class="cat" data-proc="context" ${pressed(draft.proc==="context")}>One sets the scene for the other</button></div>
+      <div class="row">${cur ? `<button class="link" data-x="remove">Remove label</button>` : `<button class="link" data-x="skip">${qpos ? "Skip this pair" : "Not now"}</button>`}<span></span></div>`;
+    (m.querySelector('.cat[aria-pressed="true"]') || m.querySelector(".cat"))?.focus({preventScroll:true});
+    fit();
+  };
+  const step2 = () => {
+    m.innerHTML = `${hdr(2)}
+      <h3>In what area?</h3>
+      <div class="pair">${esc(PROCS[draft.proc]?.label || "Connected")}</div>
+      <div class="cats themes">${THEMES.map(t=>`<button class="cat" data-area="${t.id}" style="--bc:${t.c}" ${pressed(draft.theme===t.id)}><i></i>${t.label}</button>`).join("")}</div>
+      <div class="row"><button class="link" data-x="back1">Back</button><button class="link" data-x="skip2">Skip this step</button></div>`;
+    (m.querySelector('.cat[aria-pressed="true"]') || m.querySelector(".cat"))?.focus({preventScroll:true});
+    fit();
+  };
+  const step3 = () => {
+    m.innerHTML = `${hdr(3)}
+      <h3>Because… <small>(optional)</small></h3>
+      <div class="pair">${esc(ta.term)} <span>and</span> ${esc(tb.term)}</div>
+      <label for="whyText" class="note">Say it out loud with your partner, or jot it here.</label>
+      <textarea id="whyText" maxlength="280" rows="3" placeholder="Explain why you connected them"></textarea>
+      <div class="row"><button class="link" data-x="back2">Back</button><span class="gap"></span><button class="btn" data-x="done">Done</button><button class="btn primary" data-x="saveWhy">Save reason</button></div>`;
+    const ta2 = m.querySelector("textarea"); ta2.value = draft.why || ""; ta2.focus({preventScroll:true}); fit();
+    ta2.addEventListener("keydown", ev => { if(ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); m.querySelector('[data-x="saveWhy"]').click(); } });
+  };
+  step1();
+  m.addEventListener("click", e => {
+    const inBox = sel => { const el = e.target.closest(sel); return el && m.contains(el) ? el : null; };
+    const pr = inBox("[data-proc]"), th = inBox("[data-area]"), x = inBox("[data-x]");
+    if(pr){ draft.proc = pr.dataset.proc; draft.from = pr.dataset.proc === "cause" ? pr.dataset.from : undefined; commit(); step2(); }
+    else if(th){ draft.theme = th.dataset.area; commit(); step3(); }
+    else if(x){
+      const v = x.dataset.x;
+      if(v === "back1") step1();
+      else if(v === "back2") step2();
+      else if(v === "skip2") step3();
+      else if(v === "saveWhy"){ draft.why = (m.querySelector("textarea").value || "").trim(); commit(); finish(true); }
+      else if(v === "done") finish(true);
+      else if(v === "close") finish(!!board().links[k]);
+      else if(v === "skipall"){ relQueue = []; closePops(); renderBadges(); toast("Skipped. Click any + on a seam to label it later."); }
+      else if(v === "remove"){ snapshot("removing a connection"); delete bd.links[k]; save(); finish(); }
+      else { closePops(); renderBadges(); nextRelation(); }
+    }
+  });
+  showPop(m, s.x - 170, s.y + 18);
+  for(const id of [a,b]) tilesEl.querySelector(`.hex[data-id="${id}"]`)?.classList.add("pairing");
+  fit();
+}
+
+/* ---------- dialogs ---------- */
+let dlg = null;
+function closeDialog(){ if(dlg){ dlg.remove(); dlg = null; } }
+/* ---------- large card ---------- */
+let cardTimer = null;
+function openCard(id){
+  const term = termById(id); if(!term) return;
+  const t = board().tiles[id] || {}, b = board();
+  const swatch = (COLORS.find(c => c[0] === t.color) || [])[2];
+  const conns = adjacentPairs().filter(p => p.includes(id)).map(([a,c]) => {
+    const other = a === id ? c : a, l = b.links[pairKey(a,c)];
+    if(!l) return `<li>${esc(termById(other).term)}<em>Touching, not labeled yet</em></li>`;
+    const info = linkInfo(l);
+    let lead = "";
+    if(info.proc === "cause" && info.from) lead = info.from === id ? "led to " : "was caused by ";
+    return `<li><span class="badge" style="--bc:${info.color}">${esc(info.procLabel)}</span> ${lead}${esc(termById(other).term)}${info.themeLabel ? `<em>${esc(info.themeLabel)}${info.why ? ". Because " + esc(info.why) : ""}</em>` : (info.why ? `<em>Because ${esc(info.why)}</em>` : "")}</li>`;
+  });
+  const d = openDialog(`
+    ${term.section ? `<div class="eyebrow">${esc(term.section)}</div>` : ""}
+    <h2>${esc(term.term)}</h2>
+    ${term.date ? `<div class="cdate">${esc(term.date)}</div>` : ""}
+    <p class="cdef">${esc(term.def || "No definition yet.")}</p>
+    ${board().tiles[id] ? `<h3>Connections on your table</h3>${conns.length ? `<ul class="conn-list">${conns.join("")}</ul>` : `<p class="note">None yet. Push this hexagon against another one to connect them.</p>`}` : ""}
+    <div class="actions">${board().tiles[id] ? `<button class="btn" data-x="flip">${t.flipped ? "Flip back to term" : "Flip on table"}</button>` : ""}<button class="btn primary" data-x="close">Close</button></div>`);
+  d.classList.add("card-view");
+  if(swatch) d.style.setProperty("--card-accent", swatch);
+  d.setAttribute("aria-label", term.term);
+  d.addEventListener("click", e => {
+    const x = e.target.closest("[data-x]"); if(!x) return;
+    closeDialog();
+    if(x.dataset.x === "flip") flipTile(id);
+  });
+  d.querySelector('[data-x="close"]').focus({preventScroll:true});
+}
+
+function openDialog(html){
+  closeDialog(); closePops();
+  dlg = document.createElement("div"); dlg.className = "scrim";
+  dlg.innerHTML = `<div class="dialog" role="dialog" aria-modal="true">${html}</div>`;
+  dlg.addEventListener("pointerdown", e => { if(e.target === dlg) closeDialog(); });
+  document.body.appendChild(dlg);
+  return dlg.querySelector(".dialog");
+}
+function connectionsText(){
+  const b = board(), lines = [];
+  for(const [a,c] of adjacentPairs()){
+    const l = b.links[pairKey(a,c)]; if(!l) continue;
+    const A = termById(a).term, C = termById(c).term;
+    const info = linkInfo(l), extra = (info.themeLabel ? `; ${info.themeLabel}` : "") + ")" + (info.why ? ` Because ${info.why}` : "");
+    if(info.proc === "cause" && info.from){ const from = info.from===a?A:C, to = info.from===a?C:A; lines.push(`${from} → ${to} (causation${extra}`); }
+    else lines.push(`${A} + ${C} (${info.procLabel.toLowerCase()}${extra}`);
+  }
+  return lines;
+}
+$("#connBtn").addEventListener("click", () => {
+  const b = board(), pairs = adjacentPairs();
+  const items = pairs.map(([a,c]) => {
+    const l = b.links[pairKey(a,c)], A = esc(termById(a).term), C = esc(termById(c).term);
+    if(!l) return `<li>${A} <span class="badge unset" style="width:20px;height:20px">+</span> ${C}<em>Touching, not labeled yet</em></li>`;
+    const info = linkInfo(l);
+    let left = A, right = C;
+    if(info.proc==="cause" && info.from && info.from!==a){ left = C; right = A; }
+    const sub = [info.themeLabel, info.why ? "Because " + info.why : ""].filter(Boolean).map(esc).join(". ");
+    return `<li>${left} <span class="badge" style="--bc:${info.color}">${esc(info.procLabel)}${info.proc==="cause"?" →":""}</span> ${right}${sub?`<em>${sub}</em>`:""}</li>`;
+  });
+  const d = openDialog(`<h2>Your connections</h2>
+    <p>Every pair of hexagons with touching sides. Labeled pairs are the arguments you're making about how these terms relate.</p>
+    <div class="legend">${THEMES.map(t=>`<span class="badge" style="--bc:${t.c}">${t.label}</span>`).join("")}</div>
+    ${items.length ? `<ul class="conn-list">${items.join("")}</ul>` : `<p class="note">No hexagons are touching yet. Drag one so a full side meets another.</p>`}
+    <div class="actions"><button class="btn" data-x="close">Close</button><button class="btn primary" data-x="copy" ${connectionsText().length?"":"disabled"}>Copy as text</button></div>`);
+  d.addEventListener("click", async e => {
+    const x = e.target.closest("[data-x]"); if(!x) return;
+    if(x.dataset.x==="close") closeDialog();
+    if(x.dataset.x==="copy"){
+      const txt = activeSet().name + "\n" + connectionsText().join("\n");
+      try { await navigator.clipboard.writeText(txt); toast("Copied. Paste it into your assignment."); }
+      catch(err){
+        const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("aria-label","Connections text"); ta.style.minHeight = "140px";
+        d.insertBefore(ta, d.querySelector(".actions")); ta.select(); toast("Select the text and copy it.");
+      }
+    }
+  });
+});
+
+$("#resetBtn").addEventListener("click", () => {
+  const d = openDialog(`<h2>Clear the table?</h2><p>All hexagons go back to the tray, and your colors and connection labels for this term list are erased.</p>
+    <div class="actions"><button class="btn" data-x="no">Keep my table</button><button class="btn primary" data-x="yes">Clear table</button></div>`);
+  d.addEventListener("click", e => { const x = e.target.closest("[data-x]"); if(!x) return; if(x.dataset.x==="yes"){ snapshot("clearing the table"); store.boards[activeSet().id] = {tiles:{},links:{}}; save(); renderTiles(); fitAll(); toast("Table cleared. Press Undo to bring it back."); } closeDialog(); });
+});
+
+/* Load your own terms (saved per browser), with optional Claude-written definitions */
+let samplePromise = null;
+function getSample(){ if(!samplePromise) samplePromise = (window.claude?.use ? window.claude.use("sample").catch(()=>null) : Promise.resolve(null)); return samplePromise; }
+function openImport(){
+  const d = openDialog(`<h2>Load your own terms</h2>
+    <p>One term per line. To include your own definition, write <b>Term | date | definition</b>. Lists you load here stay in this browser only.</p>
+    <label class="note" for="impName">List name</label>
+    <input id="impName" type="text" maxlength="60" placeholder="e.g. Unit 4 review">
+    <label class="note" for="impText">Terms</label>
+    <textarea id="impText" placeholder="Silk Road&#10;Tang Dynasty | 618–907 CE | Chinese dynasty known for trade, poetry, and a strong civil service&#10;Grand Canal"></textarea>
+    <p class="note" id="impStatus"></p>
+    <div class="actions"><button class="btn" data-x="cancel">Cancel</button><button class="btn primary" data-x="go">Add to my lists</button></div>`);
+  getSample().then(s => { if(s) d.querySelector("#impStatus").textContent = "Terms without a definition get one written by Claude, with a date. Claude will ask your permission first."; });
+  d.addEventListener("click", async e => {
+    const x = e.target.closest("[data-x]"); if(!x) return;
+    if(x.dataset.x==="cancel"){ closeDialog(); return; }
+    const raw = d.querySelector("#impText").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    if(!raw.length){ d.querySelector("#impStatus").textContent = "Add at least one term."; return; }
+    const id = "custom-" + Date.now().toString(36);
+    const terms = raw.slice(0,80).map((line,i) => { const [term,date,def] = line.split("|").map(s=>(s||"").trim()); return {id:id+"-"+i, term, date:date||"", def:def||""}; }).filter(t=>t.term);
+    const name = d.querySelector("#impName").value.trim() || "My terms";
+    const missing = terms.filter(t=>!t.def);
+    const sample = await getSample();
+    if(missing.length && sample){
+      x.disabled = true; const st = d.querySelector("#impStatus"); st.textContent = "Writing definitions…";
+      try {
+        const out = await sample.json(
+          `You write study-card definitions for high school history students. For each term below, give: "date" (the year, years, or century it happened, began, or was invented, with BCE/CE where helpful; keep it under 40 characters) and "def" (one plain sentence of at most 22 words explaining what it is and why it matters historically). Return ONLY a JSON array of objects {"term","date","def"} in the same order.\n\nList title: ${name}\nTerms:\n` + missing.map(t=>"- "+t.term).join("\n"),
+          {modelTier:"default"});
+        if(Array.isArray(out)) missing.forEach((t,i) => { const o = out[i] || out.find(z=>z && z.term===t.term); if(o){ t.def = String(o.def||"").slice(0,220); t.date = t.date || String(o.date||"").slice(0,60); } });
+      } catch(err){ st.textContent = err?.code==="not_granted" ? "No definitions written. You can still use the terms." : "Claude couldn't write definitions just now. Your terms were added without them."; }
+    }
+    store.customSets.push({id, name, custom:true, sections:[], terms}); store.active = id; save();
+    closeDialog(); renderAll(); fitAll(); toast(`Loaded ${terms.length} terms.`);
+  });
+}
+$("#importBtn").onclick = openImport; $("#importBtn2").onclick = openImport;
+
+/* ---------- misc ---------- */
+let toastT;
+function toast(msg){ document.querySelector(".toast")?.remove(); const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); t.textContent = msg; document.body.appendChild(t); clearTimeout(toastT); toastT = setTimeout(()=>t.remove(), 2800); }
+const defT = $("#defToggle");
+function syncDefs(){ defT.setAttribute("aria-checked", String(store.defs)); }
+defT.onclick = () => { store.defs = !store.defs; save(); syncDefs(); renderTiles(); toast(store.defs ? "Definitions on. Double-click a hexagon to flip it." : "Definitions off. Hexagons show terms only."); };
+$("#setSel").onchange = e => { store.active = e.target.value; save(); closePops(); firstVisitDeal(); renderAll(); fitAll(); };
+$("#secSel").onchange = e => { store.section[activeSet().id] = e.target.value; save(); renderTray(); if(store.view === "timeline") renderTimeline(); if(store.view === "bank") renderBank(); };
+$("#helpClose").onclick = () => { store.helpHidden = true; save(); $("#help").hidden = true; };
+$("#help").hidden = !!store.helpHidden;
+addEventListener("resize", () => closePops());
+
+
+/* ---------- timeline view ---------- */
+const TR = 50, TW = 2*TR, TH = Math.sqrt(3)*TR, AXIS = 34, MAX_BAR = 60;
+const barEnd = d => d.end - d.start > MAX_BAR ? d.start : (d.onward ? d.start + 20 : d.end);
+let tlZoom = 1, tlShow = null;
+function parseDate(str){
+  if(!str) return null;
+  const s = String(str).replace(/[‐-―]/g, "–");
+  const m = /\b(Early|Mid|Late)?\s*(\d{3,4})(s)?\b/i.exec(s);
+  if(!m) return null;
+  const tok = (mod, num, plural, ref) => {
+    let n = parseInt(num, 10);
+    if(num.length <= 2 && ref) n = Math.floor(ref/100)*100 + n;
+    let span = 0;
+    if(plural){ span = (n % 100 === 0) ? 100 : 10; }
+    let a = n, b = n + Math.max(span - 1, 0);
+    const k = (mod||"").toLowerCase();
+    if(span && k === "early"){ b = n + Math.round(span*0.33); }
+    if(span && k === "mid"){ a = n + Math.round(span*0.33); b = n + Math.round(span*0.66); }
+    if(span && k === "late"){ a = n + Math.round(span*0.66); }
+    return [a, b];
+  };
+  const [a, b] = tok(m[1], m[2], m[3]);
+  let end = b;
+  const rest = s.slice(m.index + m[0].length);
+  const r = /^\s*–\s*(Early|Mid|Late)?\s*(\d{2,4})(s)?\b/i.exec(rest);
+  if(r){ end = Math.max(a, tok(r[1], r[2], r[3], a)[1]); }
+  return {start: a, end, onward: /onward/i.test(s)};
+}
+function tlItems(){
+  const set = activeSet(), b = board();
+  const onTable = set.terms.filter(t => b.tiles[t.id]);
+  const mode = tlShow || (onTable.length ? "mine" : "all");
+  const list = mode === "mine" ? onTable : set.terms.filter(inSection);
+  return {mode, list};
+}
+function renderTimeline(){
+  const {mode, list} = tlItems();
+  $("#tlMine").setAttribute("aria-pressed", String(mode === "mine"));
+  $("#tlAll").setAttribute("aria-pressed", String(mode === "all"));
+  const sec = currentSection();
+  $("#tlAll").textContent = sec ? "All in this section" : "All terms";
+  const canvas = $("#tlCanvas"), scroller = $("#tlScroll");
+  canvas.textContent = "";
+  const dated = [], undated = [];
+  for(const t of list){ const d = parseDate(t.date); (d ? dated : undated).push({t, d}); }
+  if(!dated.length){
+    $("#tlNote").textContent = "";
+    const p = document.createElement("p"); p.className = "tl-empty";
+    p.textContent = mode === "mine" ? "Your table is empty. Put some hexagons on the table, or choose All terms above." : "None of these terms has a date yet.";
+    canvas.appendChild(p); canvas.style.width = ""; canvas.style.height = ""; return;
+  }
+  const minY = Math.floor(Math.min(...dated.map(x => x.d.start))/10)*10;
+  const maxY = Math.ceil((Math.max(...dated.map(x => Math.max(x.d.end, x.d.onward ? x.d.start + 20 : x.d.end)))+1)/10)*10;
+  const pad = TW/2 + 28, avail = Math.max(320, scroller.clientWidth - 2*pad);
+  const ppy = Math.min(80, Math.max(2.5, avail/Math.max(10, maxY - minY))) * tlZoom;
+  const X = y => pad + (y - minY)*ppy;
+  dated.sort((p, q) => p.d.start - q.d.start || p.d.end - q.d.end || p.t.term.localeCompare(q.t.term));
+  const lanes = [], gap = 8, rowH = TH + 16;
+  for(const it of dated){
+    it.x = X(it.d.start);
+    const right = Math.max(it.x + TW/2, X(barEnd(it.d))) + gap;
+    let l = lanes.findIndex(e => e <= it.x - TW/2);
+    if(l < 0){ l = lanes.length; lanes.push(0); }
+    lanes[l] = right; it.y = AXIS + 22 + l*rowH + TH/2;
+  }
+  const width = X(maxY) + pad, height = AXIS + 22 + lanes.length*rowH + (undated.length ? 60 : 24);
+  canvas.style.width = width + "px"; canvas.style.height = height + "px";
+  // axis + grid
+  const axis = document.createElement("div"); axis.className = "tl-axis"; axis.style.width = width + "px";
+  const step = [1,2,5,10,20,25,50,100].find(st => st*ppy >= 64) || 100;
+  for(let y = Math.ceil(minY/step)*step; y <= maxY; y += step){
+    const tk = document.createElement("span"); tk.className = "tl-tick"; tk.style.left = X(y) + "px"; tk.textContent = y; axis.appendChild(tk);
+    const g = document.createElement("div"); g.className = "tl-grid"; g.style.left = X(y) + "px"; canvas.appendChild(g);
+  }
+  canvas.appendChild(axis);
+  // spans + connection arcs
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", "tl-svg"); svg.setAttribute("width", width); svg.setAttribute("height", height);
+  const defs = document.createElementNS(NS, "defs"); svg.appendChild(defs);
+  const pos = {}; for(const it of dated) pos[it.t.id] = it;
+  const css = getComputedStyle(document.documentElement), muted = css.getPropertyValue("--muted").trim() || "#888";
+  for(const it of dated){
+    const xe = X(barEnd(it.d));
+    if(xe - it.x > TW/2){
+      const ln = document.createElementNS(NS, "line");
+      ln.setAttribute("x1", it.x); ln.setAttribute("x2", xe); ln.setAttribute("y1", it.y); ln.setAttribute("y2", it.y);
+      ln.setAttribute("stroke", muted); ln.setAttribute("stroke-width", "4"); ln.setAttribute("stroke-linecap", "round");
+      ln.setAttribute("opacity", ".55"); if(it.d.onward) ln.setAttribute("stroke-dasharray", "2 7");
+      svg.appendChild(ln);
+    }
+  }
+  let arcs = 0;
+  const b = board();
+  for(const [a, c] of adjacentPairs()){
+    const l = b.links[pairKey(a, c)]; if(!l || !pos[a] || !pos[c]) continue;
+    const info = linkInfo(l), cat = {c: info.color};
+    let p1 = pos[a], p2 = pos[c];
+    if(info.proc === "cause" && info.from === c){ [p1, p2] = [p2, p1]; }
+    const y1 = p1.y - TH/2 + 4, y2 = p2.y - TH/2 + 4, mx = (p1.x + p2.x)/2;
+    const lift = 26 + Math.min(140, Math.abs(p2.x - p1.x)*0.18);
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", `M${p1.x} ${y1} Q${mx} ${Math.min(y1, y2) - lift} ${p2.x} ${y2}`);
+    path.setAttribute("fill", "none"); path.setAttribute("stroke", cat.c); path.setAttribute("stroke-width", "2.5"); path.setAttribute("opacity", ".85");
+    if(info.proc === "change" || info.proc === "continuity") path.setAttribute("stroke-dasharray", info.proc === "continuity" ? "1 0" : "6 4");
+    if(info.proc === "similar" || info.proc === "different") path.setAttribute("stroke-dasharray", info.proc === "different" ? "2 5" : "1 0");
+    if(info.proc === "cause"){
+      const mid = "arr-" + arcs; const mk = document.createElementNS(NS, "marker");
+      mk.setAttribute("id", mid); mk.setAttribute("viewBox", "0 0 10 10"); mk.setAttribute("refX", "8"); mk.setAttribute("refY", "5");
+      mk.setAttribute("markerWidth", "7"); mk.setAttribute("markerHeight", "7"); mk.setAttribute("orient", "auto-start-reverse");
+      const tri = document.createElementNS(NS, "path"); tri.setAttribute("d", "M0 0L10 5L0 10z"); tri.setAttribute("fill", cat.c);
+      mk.appendChild(tri); defs.appendChild(mk); path.setAttribute("marker-end", `url(#${mid})`);
+    }
+    svg.appendChild(path); arcs++;
+  }
+  canvas.appendChild(svg);
+  // hexagons
+  for(const it of dated){
+    const t = it.t, tile = b.tiles[t.id];
+    const el = document.createElement("button"); el.className = "tlh"; el.dataset.id = t.id;
+    el.style.left = (it.x - TW/2) + "px"; el.style.top = (it.y - TH/2) + "px"; el.style.width = TW + "px"; el.style.height = TH + "px";
+    if(tile && tile.color) el.dataset.color = tile.color;
+    el.title = `${t.term} (${t.date})`; el.setAttribute("aria-label", `${t.term}, ${t.date}`);
+    el.innerHTML = `<span class="in"><span class="tt"></span><span class="td"></span></span>`;
+    el.querySelector(".tt").textContent = t.term; el.querySelector(".td").textContent = t.date;
+    canvas.appendChild(el);
+    const tt = el.querySelector(".tt"), box = el.querySelector(".in");
+    let fs = 12.5; tt.style.fontSize = fs + "px";
+    while(fs > 8 && (box.scrollHeight > box.clientHeight + 1 || tt.scrollWidth > tt.clientWidth + 1)){ fs -= .5; tt.style.fontSize = fs + "px"; }
+    if(tt.scrollWidth > tt.clientWidth + 1) tt.style.overflowWrap = "anywhere";
+  }
+  if(undated.length){
+    const u = document.createElement("p"); u.className = "tl-undated"; u.style.top = (height - 44) + "px";
+    u.textContent = "No date to place: " + undated.map(x => x.t.term).join(", ");
+    canvas.appendChild(u);
+  }
+  $("#tlNote").textContent = `${dated.length} terms from ${minY} to ${maxY}` + (arcs ? ` · arcs show your ${arcs} labeled connection${arcs === 1 ? "" : "s"}` : "") + " · click a hexagon to read it";
+}
+function setView(v){
+  if(!["table","timeline","bank"].includes(v)) v = "table";
+  store.view = v; save();
+  const tl = v === "timeline", wb = v === "bank";
+  $(".main").classList.toggle("tl", tl);
+  $(".main").classList.toggle("wb", wb);
+  $("#timeline").hidden = !tl;
+  $("#wordbank").hidden = !wb;
+  $("#viewTable").setAttribute("aria-pressed", String(v === "table"));
+  $("#viewTimeline").setAttribute("aria-pressed", String(tl));
+  $("#viewBank").setAttribute("aria-pressed", String(wb));
+  closePops();
+  if(tl) renderTimeline(); else if(wb) renderBank(); else { renderTiles(); requestAnimationFrame(fitAll); }
+}
+$("#viewBank").onclick = () => setView("bank");
+$("#viewTable").onclick = () => setView("table");
+$("#viewTimeline").onclick = () => setView("timeline");
+$("#tlMine").onclick = () => { tlShow = "mine"; renderTimeline(); };
+$("#tlAll").onclick = () => { tlShow = "all"; renderTimeline(); };
+$("#tlIn").onclick = () => { tlZoom = Math.min(8, tlZoom*1.4); renderTimeline(); };
+$("#tlOut").onclick = () => { tlZoom = Math.max(.3, tlZoom/1.4); renderTimeline(); };
+$("#tlCanvas").addEventListener("click", e => { const h = e.target.closest(".tlh"); if(h) openCard(h.dataset.id); });
+let tlResize; addEventListener("resize", () => { if(store.view === "timeline"){ clearTimeout(tlResize); tlResize = setTimeout(renderTimeline, 150); } });
+
+/* ---------- Mental Word Bank ---------- */
+const WB_R = 44, WB_W = 2*WB_R, WB_H = Math.sqrt(3)*WB_R, WB_QR = 124;
+function bankState(){
+  const id = activeSet().id;
+  if(!store.bank) store.bank = {};
+  if(!store.bank[id]) store.bank[id] = {active:null, q:{}, mine:[]};
+  const b = store.bank[id]; b.q = b.q || {}; b.mine = b.mine || []; return b;
+}
+function allQuestions(){ return (activeSet().questions || []).concat(bankState().mine.map(q => ({...q, mine:true}))); }
+function bankQuestions(){ const sec = currentSection(); return allQuestions().filter(q => !sec || !q.section || q.section === sec); }
+function qEntry(qid){ const b = bankState(); if(!b.q[qid]) b.q[qid] = {ev:[], notes:{}}; return b.q[qid]; }
+function evSorted(entry){
+  const terms = entry.ev.map(termById).filter(Boolean);
+  return terms.map((t, i) => ({t, i, d: parseDate(t.date)})).sort((a, b) => (a.d ? a.d.start : 1e9) - (b.d ? b.d.start : 1e9) || a.i - b.i).map(x => x.t);
+}
+function bankSlots(n){
+  const out = [], ap = r => r*Math.sqrt(3)/2;
+  const d1 = ap(WB_QR) + ap(WB_R), d1v = WB_QR + ap(WB_R) + 2;
+  for(let k=0;k<6;k++){ const a = (-90 + 60*k) * Math.PI/180; out.push([d1*Math.cos(a), d1*Math.sin(a)]); }
+  for(let k=0;k<6;k++){ const a = (-60 + 60*k) * Math.PI/180; out.push([d1v*Math.cos(a), d1v*Math.sin(a)]); }
+  let radius = d1v + WB_H*0.98, count = 16;
+  while(out.length < n){
+    for(let k=0;k<count && out.length < n + 40;k++){ const a = (-90 + 360*k/count) * Math.PI/180; out.push([radius*Math.cos(a), radius*Math.sin(a)]); }
+    radius += WB_H*0.98; count += 6;
+  }
+  return out.slice(0, n);
+}
+function renderBank(){
+  const set = activeSet(), b = bankState(), qs = bankQuestions();
+  // section picker
+  const sel = $("#wbSec"), secs = set.sections || [];
+  sel.hidden = !secs.length; sel.textContent = "";
+  if(secs.length){
+    const all = document.createElement("option"); all.value = ""; all.textContent = "All sections"; sel.appendChild(all);
+    for(const sc of secs){ const o = document.createElement("option"); o.value = sc; o.textContent = sc; sel.appendChild(o); }
+    sel.value = currentSection();
+  }
+  if(!qs.find(q => q.id === b.active)) b.active = qs[0] ? qs[0].id : null;
+  const q = allQuestions().find(x => x.id === b.active) || null;
+  $("#wbDraw").disabled = qs.length < 2;
+  // question list
+  const list = $("#wbList"); list.textContent = "";
+  if(!qs.length){ const li = document.createElement("li"); li.className = "wb-empty"; li.style.padding = "8px 0"; li.textContent = set.custom ? "Your own lists start without questions. Write one below." : "No questions for this section yet."; list.appendChild(li); }
+  for(const x of qs){
+    const li = document.createElement("li"), btn = document.createElement("button");
+    btn.className = "wb-q"; btn.dataset.q = x.id; btn.setAttribute("aria-current", String(x.id === b.active));
+    const n = (b.q[x.id] && b.q[x.id].ev.length) || 0;
+    btn.innerHTML = `<span class="clamp"></span><small></small>`;
+    btn.querySelector(".clamp").textContent = x.text;
+    btn.querySelector("small").textContent = (x.mine ? "Your question" : (x.section || "")) + (n ? ` · ${n} term${n === 1 ? "" : "s"} in your word bank` : "");
+    btn.title = x.text; li.appendChild(btn);
+    if(x.mine){ const del = document.createElement("button"); del.className = "wb-del"; del.dataset.del = x.id; del.setAttribute("aria-label", "Delete this question"); del.textContent = "×"; li.appendChild(del); }
+    list.appendChild(li);
+  }
+  renderBankStage(q); renderBankBuilder(q); renderBankTerms(q);
+  const total = Object.values(b.q).reduce((a, e) => a + e.ev.length, 0);
+  $("#wbNote").textContent = q ? "Surround the question with terms that help answer it, then talk through why each one belongs." : "";
+}
+function renderBankStage(q){
+  const stage = $("#wbStage"), canvas = $("#wbCanvas");
+  canvas.textContent = ""; canvas.style.transform = "";
+  if(!q){ canvas.style.width = ""; canvas.style.height = ""; const p = document.createElement("p"); p.className = "wb-empty"; p.textContent = "Pick a question to start your Mental Word Bank."; canvas.appendChild(p); return; }
+  const entry = qEntry(q.id), ev = entry.ev.map(termById).filter(Boolean);
+  const slots = bankSlots(ev.length);
+  let ext = WB_QR;
+  for(const [x, y] of slots) ext = Math.max(ext, Math.abs(x) + WB_R, Math.abs(y) + WB_H/2);
+  const size = Math.ceil(2*ext + 40), c = size/2;
+  canvas.style.width = size + "px"; canvas.style.height = size + "px";
+  const avail = Math.max(260, stage.clientWidth - 24), scale = Math.min(1, avail/size);
+  if(scale < 1){ canvas.style.transform = `scale(${scale})`; canvas.style.height = size + "px"; canvas.style.marginBottom = (size*scale - size) + "px"; } else canvas.style.marginBottom = "";
+  canvas.style.marginTop = "12px";
+  const qh = document.createElement("div"); qh.className = "wbq";
+  const QW = 2*WB_QR, QH = Math.sqrt(3)*WB_QR;
+  Object.assign(qh.style, {left: (c - QW/2) + "px", top: (c - QH/2) + "px", width: QW + "px", height: QH + "px"});
+  qh.innerHTML = `<div class="in"><span class="lab">Question</span><span class="qt"></span></div>`;
+  qh.querySelector(".qt").textContent = q.text; canvas.appendChild(qh);
+  const qt = qh.querySelector(".qt"), box = qh.querySelector(".in");
+  let fs = 17; qt.style.fontSize = fs + "px";
+  while(fs > 9 && box.scrollHeight > box.clientHeight + 1){ fs -= .5; qt.style.fontSize = fs + "px"; }
+  ev.forEach((t, i) => {
+    const [x, y] = slots[i], tile = board().tiles[t.id];
+    const el = document.createElement("button"); el.className = "tlh"; el.dataset.id = t.id;
+    Object.assign(el.style, {left: (c + x - WB_W/2) + "px", top: (c + y - WB_H/2) + "px", width: WB_W + "px", height: WB_H + "px"});
+    if(tile && tile.color) el.dataset.color = tile.color;
+    el.title = `${t.term} (${t.date}). Click to read it.`;
+    el.innerHTML = `<span class="in"><span class="tt"></span><span class="td"></span></span>`;
+    el.querySelector(".tt").textContent = t.term; el.querySelector(".td").textContent = t.date;
+    canvas.appendChild(el);
+    const tt = el.querySelector(".tt"), bx = el.querySelector(".in");
+    let f = 12; tt.style.fontSize = f + "px";
+    while(f > 8 && (bx.scrollHeight > bx.clientHeight + 1 || tt.scrollWidth > tt.clientWidth + 1)){ f -= .5; tt.style.fontSize = f + "px"; }
+    if(tt.scrollWidth > tt.clientWidth + 1) tt.style.overflowWrap = "anywhere";
+  });
+  if(!ev.length){
+    const hint = document.createElement("p"); hint.className = "wb-empty";
+    Object.assign(hint.style, {position:"absolute", left:"0", right:"0", top: (c + QH/2 + 14) + "px", padding:"0 12px", margin:"0"});
+    hint.textContent = "Add terms from “Add evidence” to surround this question.";
+    canvas.appendChild(hint);
+  }
+}
+function renderBankBuilder(q){
+  const box = $("#wbBuild"); box.textContent = "";
+  if(!q) return;
+  const entry = qEntry(q.id), ev = evSorted(entry);
+  const head = document.createElement("p"); head.className = "qhead"; head.textContent = q.text; box.appendChild(head);
+  if(!ev.length){ const p = document.createElement("p"); p.className = "tl-note"; p.textContent = "No evidence yet. Add terms below; they appear around the question in date order."; box.appendChild(p); return; }
+  const ul = document.createElement("ul"); ul.className = "wb-ev";
+  for(const t of ev){
+    const li = document.createElement("li");
+    li.innerHTML = `<div class="top"><b></b><span></span><button class="x" aria-label="Remove from word bank" data-rm="${esc(t.id)}">×</button></div><input type="text" maxlength="240" placeholder="Because… (optional)">`;
+    li.querySelector("b").textContent = t.term; li.querySelector("span").textContent = t.date || "";
+    const inp = li.querySelector("input"); inp.id = "wbn-" + t.id; inp.value = entry.notes[t.id] || ""; inp.dataset.note = t.id;
+    inp.setAttribute("aria-label", `Why ${t.term} helps answer the question`);
+    ul.appendChild(li);
+  }
+  box.appendChild(ul);
+  const act = document.createElement("div"); act.className = "wb-actions";
+  act.innerHTML = `<button class="btn primary" data-wb="copy">Copy as answer outline</button><button class="btn" data-wb="clear">Clear this word bank</button>`;
+  box.appendChild(act);
+}
+function renderBankTerms(q){
+  const wrap = $("#wbTerms"); wrap.textContent = "";
+  if(!q) return;
+  const entry = qEntry(q.id), term = ($("#wbSearch").value || "").trim().toLowerCase();
+  const set = activeSet();
+  const pool = term ? set.terms.filter(t => (t.term + " " + (t.def || "")).toLowerCase().includes(term)) : set.terms.filter(t => q.section ? t.section === q.section : inSection(t));
+  for(const t of pool.slice(0, 120)){
+    const b = document.createElement("button"); b.className = "wb-chip"; b.dataset.add = t.id;
+    const on = entry.ev.includes(t.id); b.setAttribute("aria-pressed", String(on));
+    b.textContent = (on ? "✓ " : "+ ") + t.term; b.title = on ? "In your word bank. Click to remove." : (t.date ? `${t.date}. Click to add.` : "Click to add.");
+    wrap.appendChild(b);
+  }
+  if(!pool.length){ const p = document.createElement("p"); p.className = "tl-note"; p.textContent = "No matching terms."; wrap.appendChild(p); }
+}
+function bankOutline(q){
+  const entry = qEntry(q.id), lines = [`Question: ${q.text}`, "", "Evidence:"];
+  for(const t of evSorted(entry)){ const n = (entry.notes[t.id] || "").trim(); lines.push(`- ${t.date ? t.date + ", " : ""}${t.term}${n ? ": " + n : ""}`); }
+  return lines.join("\n");
+}
+$("#wbList").addEventListener("click", e => {
+  const del = e.target.closest("[data-del]");
+  if(del){ const b = bankState(); b.mine = b.mine.filter(x => x.id !== del.dataset.del); delete b.q[del.dataset.del]; save(); renderBank(); return; }
+  const q = e.target.closest("[data-q]"); if(!q) return;
+  bankState().active = q.dataset.q; save(); renderBank();
+});
+$("#wbSec").onchange = e => { store.section[activeSet().id] = e.target.value; save(); renderTray(); renderBank(); };
+$("#wbDraw").onclick = () => {
+  const b = bankState(), qs = bankQuestions().filter(q => q.id !== b.active); if(!qs.length) return;
+  b.active = qs[Math.floor(Math.random()*qs.length)].id; save(); renderBank(); toast("New question drawn. Build your word bank around it.");
+};
+$("#wbAddQ").addEventListener("submit", e => {
+  e.preventDefault(); const ta = $("#wbNewQ"), text = (ta.value || "").trim(); if(!text) { ta.focus(); return; }
+  const b = bankState(), q = {id: "mq-" + Date.now().toString(36), section: currentSection(), text};
+  b.mine.push(q); b.active = q.id; ta.value = ""; save(); renderBank();
+});
+$("#wbTerms").addEventListener("click", e => {
+  const c = e.target.closest("[data-add]"); if(!c) return;
+  const b = bankState(); if(!b.active) return;
+  const entry = qEntry(b.active), id = c.dataset.add, i = entry.ev.indexOf(id);
+  if(i >= 0){ entry.ev.splice(i, 1); } else { entry.ev.push(id); }
+  save(); renderBank();
+});
+$("#wbSearch").addEventListener("input", () => { const b = bankState(); renderBankTerms(allQuestions().find(x => x.id === b.active)); });
+$("#wbBuild").addEventListener("click", async e => {
+  const b = bankState(), q = allQuestions().find(x => x.id === b.active); if(!q) return;
+  const rm = e.target.closest("[data-rm]");
+  if(rm){ const entry = qEntry(q.id); entry.ev = entry.ev.filter(x => x !== rm.dataset.rm); save(); renderBank(); return; }
+  const a = e.target.closest("[data-wb]"); if(!a) return;
+  if(a.dataset.wb === "copy"){
+    const txt = bankOutline(q);
+    try { await navigator.clipboard.writeText(txt); toast("Outline copied. Paste it into your notes or assignment."); }
+    catch(err){ const d = openDialog(`<h2>Your answer outline</h2><textarea aria-label="Answer outline"></textarea><div class="actions"><button class="btn primary" data-x="close">Close</button></div>`); const ta = d.querySelector("textarea"); ta.value = txt; ta.select(); d.addEventListener("click", ev => { if(ev.target.closest('[data-x="close"]')) closeDialog(); }); }
+  }
+  if(a.dataset.wb === "clear"){
+    const d = openDialog(`<h2>Clear this word bank?</h2><p>The terms and notes you gathered for this question will be removed. Your table is not affected.</p><div class="actions"><button class="btn" data-x="no">Keep it</button><button class="btn primary" data-x="yes">Clear</button></div>`);
+    d.addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if(!x) return; if(x.dataset.x === "yes"){ delete bankState().q[q.id]; save(); renderBank(); } closeDialog(); });
+  }
+});
+$("#wbBuild").addEventListener("input", e => {
+  const inp = e.target.closest("[data-note]"); if(!inp) return;
+  const b = bankState(); if(!b.active) return;
+  qEntry(b.active).notes[inp.dataset.note] = inp.value; save();
+});
+$("#wbCanvas").addEventListener("click", e => { const h = e.target.closest(".tlh"); if(h) openCard(h.dataset.id); });
+let wbResize; addEventListener("resize", () => { if(store.view === "bank"){ clearTimeout(wbResize); wbResize = setTimeout(() => { const b = bankState(); renderBankStage(allQuestions().find(x => x.id === b.active) || null); }, 150); } });
+
+/* ---------- opening page ---------- */
+const intro = $("#intro");
+function renderIntro(){
+  const list = $("#guideList"); list.textContent = "";
+  const sets = allSets(), started = id => !!(store.boards[id] && Object.keys(store.boards[id].tiles||{}).length);
+  for(const s of sets){
+    const b = document.createElement("button"); b.className = "guide"; b.dataset.id = s.id;
+    if(store.active === s.id && started(s.id)) b.classList.add("resume");
+    const name = document.createElement("b"); name.textContent = s.name;
+    const meta = document.createElement("span");
+    const secs = (s.sections||[]).length;
+    const nq = (s.questions || []).length;
+    meta.textContent = `${s.terms.length} terms` + (nq ? ` · ${nq} questions` : "") + (secs ? ` · ${secs} sections` : "") + (s.custom ? " · your list" : "");
+    b.append(name, meta); list.appendChild(b);
+  }
+}
+$("#guideList").addEventListener("click", e => {
+  const b = e.target.closest(".guide"); if(!b) return;
+  store.active = b.dataset.id; save(); closeIntro();
+});
+function openIntro(){ closePops(); closeDialog(); renderIntro(); intro.hidden = false; intro.scrollTop = 0; intro.querySelector(".guide")?.focus({preventScroll:true}); }
+function closeIntro(){ intro.hidden = true; firstVisitDeal(); renderAll(); setView(store.view || "table"); }
+$("#homeBtn").addEventListener("click", openIntro);
+renderIntro();
+
+gridBg(); syncDefs();
+function firstVisitDeal(){
+  const s = activeSet(); if(store.boards[s.id] || s.custom) return;
+  const first = (s.sections||[])[0]; if(first && store.section[s.id] === undefined) store.section[s.id] = first;
+  const b = board(); for(const t of s.terms) if(inSection(t)){ const c = nearestIsolated(0,0); b.tiles[t.id] = {q:c.q,r:c.r,color:"",flipped:false}; }
+  save();
+}
+firstVisitDeal();
+renderAll();
+requestAnimationFrame(fitAll);
+})();
+</script>
+
+</body>
+</html>
